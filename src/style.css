@@ -2565,4 +2565,67 @@ body.light-mode .airport-tooltip {
   border-color: rgba(0, 119, 182, 0.3);
 }
 
+/* Altitude Legend Overlay */
+.altitude-legend {
+  position: absolute;
+  bottom: 25px;
+  left: 20px;
+  z-index: 998;
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-bg-panel);
+  border: var(--border-light);
+  backdrop-filter: blur(8px);
+}
+
+.altitude-legend .legend-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.altitude-legend .legend-scale {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.altitude-legend .scale-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.altitude-legend .scale-item::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--scale-color);
+  box-shadow: 0 0 6px var(--scale-color);
+}
+
+@media (max-width: 900px) {
+  .altitude-legend {
+    bottom: 75px;
+    left: 10px;
+    padding: 6px 10px;
+    gap: 4px;
+    max-width: calc(100% - 20px);
+    overflow-x: auto;
+  }
+  .altitude-legend .legend-scale {
+    gap: 8px;
+  }
+}
+
 

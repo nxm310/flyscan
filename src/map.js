@@ -98,6 +98,23 @@ export class MapController {
     }
   }
 
+  getAltitudeColor(altFt) {
+    if (altFt <= 0) return '#7f8c8d'; // Ground / unknown
+    if (altFt < 1000) return '#ff0000';  // Red
+    if (altFt < 2000) return '#ff4500';  // Orange-Red
+    if (altFt < 4000) return '#ff8c00';  // Orange
+    if (altFt < 7000) return '#ffcc00';  // Gold/Yellow
+    if (altFt < 10000) return '#99ff00'; // Lime Green
+    if (altFt < 15000) return '#00ff00'; // Green
+    if (altFt < 20000) return '#009900'; // Dark Green
+    if (altFt < 25000) return '#00ff99'; // Teal
+    if (altFt < 30000) return '#00ffff'; // Cyan
+    if (altFt < 35000) return '#00aaff'; // Light Blue
+    if (altFt < 40000) return '#0055ff'; // Dark Blue
+    if (altFt < 45000) return '#5500ff'; // Purple
+    return '#ff00ff'; // Magenta (very high)
+  }
+
   createPlaneIcon(flight, isSelected) {
     const heading = Math.round(flight.heading);
     const category = flight.category; // CIVIL, MILITARY, PRIVATE
@@ -109,16 +126,18 @@ export class MapController {
     if (isEmergency) categoryClass = 'emg';
 
     const selectedClass = isSelected ? 'selected' : '';
-    const labelId = flight.flightNumber || flight.callsign || flight.icao24 || '???';
     const altFt = flight.altitude ? Math.round(flight.altitude) : 0;
-    const speed = flight.speed ? Math.round(flight.speed) : 0;
+    
+    // Dynamic color based on altitude (like ADS-B Exchange)
+    // If it's an emergency, keep it red/emergency color for visibility
+    const planeColor = isEmergency ? '#e11d48' : this.getAltitudeColor(altFt);
     
     // Custom DivIcon allowing rotation and pulse effects
     const htmlContent = `
       <div class="plane-marker-icon-wrapper" style="transform: rotate(${heading}deg);">
         <div class="plane-marker-pulse ${categoryClass}"></div>
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="${this.planeSvgPath}"/>
+          <path d="${this.planeSvgPath}" style="fill: ${planeColor} !important;"/>
         </svg>
       </div>
     `;

@@ -517,19 +517,18 @@ export class AirspaceSimulator {
   }
 
   // ──────────────────────────────────────────────
-  // Primary ADS-B source: opendata.adsb.fi
-  // Returns 'aircraft' key (not 'ac')
-  // 1000-1200 aircraft in 250nm around France
+  // Primary ADS-B source: api.airplanes.live (Native CORS Support!)
+  // Returns 'ac' key
+  // 1000-1200 aircraft in 350nm around France
   // ──────────────────────────────────────────────
-  async _fetchAdsbFi(lat, lng, radiusNm = 350) {
-    const url = `https://opendata.adsb.fi/api/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
+  async _fetchAirplanesLive(lat, lng, radiusNm = 350) {
+    const url = `https://api.airplanes.live/v2/point/${lat.toFixed(4)}/${lng.toFixed(4)}/${radiusNm}`;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       
-      // adsb.fi uses 'aircraft' key
-      const rawList = data.aircraft || data.ac || [];
+      const rawList = data.ac || data.aircraft || [];
       if (!rawList.length) return null;
       
       const flights = rawList
@@ -576,29 +575,28 @@ export class AirspaceSimulator {
           nav_heading: ac.nav_heading,
           spi: ac.spi,            // IDENT squitter
           alert: ac.alert,
-          _source: 'adsb.fi',
+          _source: 'airplanes.live',
         }));
       
       return flights.length > 0 ? flights : null;
     } catch (err) {
-      console.warn('[adsb.fi] Fetch error:', err.message);
+      console.warn('[airplanes.live] Fetch error:', err.message);
       return null;
     }
   }
 
   // ──────────────────────────────────────────────
-  // Secondary ADS-B source: adsb.lol (same format as adsb.fi)
-  // Uses 'ac' key
+  // Secondary ADS-B source: opendata.adsb.fi (via CORS Proxy)
   // ──────────────────────────────────────────────
-  async _fetchAdsbLol(lat, lng, radiusNm = 350) {
-    const url = `https://api.adsb.lol/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
+  async _fetchAdsbFiProxy(lat, lng, radiusNm = 350) {
+    const targetUrl = `https://opendata.adsb.fi/api/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
+    const url = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       
-      // adsb.lol uses 'ac' key
-      const rawList = data.ac || data.aircraft || [];
+      const rawList = data.aircraft || data.ac || [];
       if (!rawList.length) return null;
       
       const flights = rawList
@@ -617,12 +615,12 @@ export class AirspaceSimulator {
           category: ac.category,
           seen: ac.seen, messages: ac.messages, rssi: ac.rssi,
           on_ground: false,
-          _source: 'adsb.lol',
+          _source: 'adsb.fi',
         }));
       
       return flights.length > 0 ? flights : null;
     } catch (err) {
-      console.warn('[adsb.lol] Fetch error:', err.message);
+      console.warn('[adsb.fi proxy] Fetch error:', err.message);
       return null;
     }
   }
@@ -672,14 +670,14 @@ export class AirspaceSimulator {
   // Main public method: fetch live data
   // ──────────────────────────────────────────────
   async fetchAndApplyLiveStates(lat = 48.85, lng = 2.35) {
-    // 1. Try adsb.fi FIRST (returns 'aircraft' key, 1000+ results in 350nm)
-    let liveFlights = await this._fetchAdsbFi(lat, lng, 350);
-    let source = 'adsb.fi';
+    // 1. Try airplanes.live FIRST (Native CORS, 1000+ results in 350nm)
+    let liveFlights = await this._fetchAirplanesLive(lat, lng, 350);
+    let source = 'airplanes.live';
     
     if (!liveFlights || liveFlights.length < 10) {
-      // 2. Fallback to adsb.lol
-      liveFlights = await this._fetchAdsbLol(lat, lng, 350);
-      source = 'adsb.lol';
+      // 2. Fallback to adsb.fi via CORS proxy
+      liveFlights = await this._fetchAdsbFiProxy(lat, lng, 350);
+      source = 'adsb.fi(proxy)';
     }
     
     if (!liveFlights || liveFlights.length < 10) {

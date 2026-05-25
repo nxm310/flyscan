@@ -23,8 +23,8 @@ export class UIController {
       this.deselectFlight();
     });
 
-    // Main Header: Filters
-    const filterBtns = document.querySelectorAll('.filter-btn');
+    // Main Header: Filters (only aircraft category filters)
+    const filterBtns = document.querySelectorAll('.filter-btn[data-filter]');
     filterBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         filterBtns.forEach(b => b.classList.remove('active'));
@@ -64,15 +64,13 @@ export class UIController {
     document.getElementById('theme-toggle-btn').addEventListener('click', () => {
       isLightMode = !isLightMode;
       this.appState.map.switchTheme(isLightMode);
-      // Change the button appearance slightly so user knows it's toggled
+      
       const btn = document.getElementById('theme-toggle-btn');
-      if (isLightMode) {
-        btn.style.background = 'rgba(255, 255, 255, 0.9)';
-        btn.style.color = '#0077b6';
-      } else {
-        btn.style.background = 'transparent';
-        btn.style.color = 'var(--color-primary)';
-      }
+      const icon = isLightMode ? 'sun' : 'moon';
+      const text = isLightMode ? 'Clair' : 'Sombre';
+      
+      btn.innerHTML = `<i data-lucide="${icon}"></i> ${text}`;
+      lucide.createIcons();
     });
 
     // AR Toggle Button

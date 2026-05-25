@@ -46,6 +46,26 @@ export class MapController {
       className: 'glowing-flight-trail'
     }).addTo(this.map);
 
+    // Map Theme Toggle Control
+    this.isLightMode = false;
+    const themeControl = L.control({ position: 'bottomright' });
+    themeControl.onAdd = () => {
+      const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control custom-map-theme-toggle');
+      btn.innerHTML = `<a href="#" title="Basculer le style de la carte (Sombre/Clair)" style="font-size: 16px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: rgba(10, 15, 30, 0.8); color: #00f2fe; border-radius: 4px; border: 1px solid rgba(0,242,254,0.3); backdrop-filter: blur(4px);">🌓</a>`;
+      
+      L.DomEvent.on(btn, 'click', L.DomEvent.stop)
+                .on(btn, 'click', () => {
+                  this.isLightMode = !this.isLightMode;
+                  this.tileLayer.setUrl(this.isLightMode ? this.tileLayerUrlLight : this.tileLayerUrlDark);
+                  // Update button style based on theme
+                  btn.querySelector('a').style.background = this.isLightMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(10, 15, 30, 0.8)';
+                  btn.querySelector('a').style.color = this.isLightMode ? '#0077b6' : '#00f2fe';
+                  btn.querySelector('a').style.borderColor = this.isLightMode ? 'rgba(0,119,182,0.3)' : 'rgba(0,242,254,0.3)';
+                });
+      return btn;
+    };
+    themeControl.addTo(this.map);
+
     // User location marker (initially null)
     this.userLocationMarker = null;
 
@@ -109,14 +129,22 @@ export class MapController {
     if (isEmergency) categoryClass = 'emg';
 
     const selectedClass = isSelected ? 'selected' : '';
+    const labelId = flight.flightNumber || flight.callsign || flight.icao24 || '???';
+    const altFt = flight.altitude ? Math.round(flight.altitude) : 0;
+    const speed = flight.speed ? Math.round(flight.speed) : 0;
     
-    // Custom DivIcon allowing rotation and pulse effects
+    // Custom DivIcon allowing rotation and pulse effects, PLUS a floating data label
     const htmlContent = `
       <div class="plane-marker-icon-wrapper" style="transform: rotate(${heading}deg);">
         <div class="plane-marker-pulse ${categoryClass}"></div>
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="${this.planeSvgPath}"/>
         </svg>
+      </div>
+      <div class="plane-marker-label ${categoryClass} ${selectedClass}">
+        <div class="lbl-id">${labelId}</div>
+        <div class="lbl-alt">${altFt}ft</div>
+        <div class="lbl-spd">${speed}kt</div>
       </div>
     `;
 

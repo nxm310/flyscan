@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Flyradar - Suivi de vol en direct, radar aéronautique en temps réel, alertes d'urgence et mode Réalité Augmentée." />
+    
+    <title>Flyradar — Radar Aéronautique et Suivi de Vols en Temps Réel</title>
+
+    <!-- Google Fonts: Outfit & Space Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <!-- App Container -->
+    <div id="app-container">
+      
+      <!-- Splash Loading Screen -->
+      <div id="splash-screen">
+        <div class="splash-content">
+          <div class="radar-scanner">
+            <div class="scanner-sweep"></div>
+            <div class="scanner-blip" style="top: 30%; left: 40%"></div>
+            <div class="scanner-blip" style="top: 60%; left: 75%"></div>
+          </div>
+          <h1>FLYRADAR</h1>
+          <p class="subtitle">INITIALISATION DE L'ESPACE AÉRIEN</p>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="splash-progress"></div>
+          </div>
+          <p class="status-text" id="splash-status">Connexion au réseau ADS-B...</p>
+        </div>
+      </div>
+
+      <!-- Emergency Squawk 7700 Banner -->
+      <div id="emergency-banner" class="hidden">
+        <div class="emergency-inner">
+          <i data-lucide="alert-triangle" class="emergency-icon-pulse"></i>
+          <span class="emergency-title">ALERTE D'URGENCE (SQUAWK 7700) :</span>
+          <span class="emergency-message" id="emergency-text">Le vol AF125 a déclaré une situation d'urgence au-dessus de Paris.</span>
+          <button id="emergency-focus-btn">INTERCEPTER</button>
+          <button id="emergency-close-btn" class="icon-btn"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+
+      <!-- Main Navigation / Header -->
+      <header id="main-header" class="glass-panel">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <i data-lucide="radar"></i>
+          </div>
+          <div class="logo-text">
+            <h2>FlyRadar</h2>
+            <span class="tag">ADS-B LIVE</span>
+          </div>
+        </div>
+
+        <div class="search-bar-container">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="search-input" placeholder="Rechercher un vol, une compagnie, un aéroport..." autocomplete="off" />
+          <div id="search-results" class="glass-panel hidden"></div>
+        </div>
+
+        <div class="filter-controls">
+          <button class="filter-btn active" data-filter="all">Tous</button>
+          <button class="filter-btn" data-filter="civil"><i data-lucide="plane"></i> Civil</button>
+          <button class="filter-btn" data-filter="military"><i data-lucide="shield"></i> Militaire</button>
+          <button class="filter-btn" data-filter="private"><i data-lucide="sparkles"></i> Privé</button>
+        </div>
+
+        <div class="action-buttons">
+          <button id="ar-toggle-btn" class="primary-action-btn">
+            <i data-lucide="aperture"></i>
+            <span>MODE RÉALITÉ AUGMENTÉE</span>
+          </button>
+          <button id="alerts-toggle-btn" class="icon-action-btn" title="Centre d'alertes">
+            <i data-lucide="bell"></i>
+            <span class="badge hidden" id="alerts-badge">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Leaflet Map Area -->
+      <main id="map-container">
+        <div id="map"></div>
+        <!-- Live Airspace Statistics Overlay -->
+        <div class="map-stats-badge glass-panel">
+          <div class="stat-item">
+            <span class="label">VOLS EN DIRECT</span>
+            <span class="value" id="stat-active-flights">0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="label">SQUAWKS ACTIFS</span>
+            <span class="value warning-text" id="stat-active-squawks">0</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- LEFT SIDEBAR: Flight Details -->
+      <aside id="flight-details-sidebar" class="sidebar glass-panel closed">
+        <button id="close-details-btn" class="close-sidebar-btn"><i data-lucide="chevron-left"></i></button>
+        
+        <div class="sidebar-header-pattern"></div>
+        
+        <div class="sidebar-scroll-content">
+          <div class="flight-main-info">
+            <div class="airline-logo-placeholder" id="det-airline-logo">AF</div>
+            <div class="flight-title-wrap">
+              <h3 id="det-flight-number">AF123</h3>
+              <p id="det-airline-name">Air France</p>
+            </div>
+            <span class="flight-type-badge" id="det-flight-category">CIVIL</span>
+          </div>
+
+          <div class="flight-route-section">
+            <div class="airport-code-block">
+              <span class="code" id="det-origin-code">CDG</span>
+              <span class="name" id="det-origin-name">Paris Charles de Gaulle</span>
+            </div>
+            <div class="route-vector-container">
+              <div class="vector-dot"></div>
+              <div class="vector-line">
+                <div class="vector-plane-progress" id="det-route-progress-bar" style="left: 45%;">
+                  <i data-lucide="plane" class="vector-plane-icon"></i>
+                </div>
+              </div>
+              <div class="vector-dot"></div>
+            </div>
+            <div class="airport-code-block right-align">
+              <span class="code" id="det-dest-code">JFK</span>
+              <span class="name" id="det-dest-name">New York John F. Kennedy</span>
+            </div>
+          </div>
+
+          <div class="flight-progress-timer">
+            <div class="time-stat">
+              <span class="lbl">DÉPART</span>
+              <span class="val" id="det-departure-time">10:15</span>
+            </div>
+            <div class="progress-percentage" id="det-progress-percent">45%</div>
+            <div class="time-stat right-align">
+              <span class="lbl">ARRIVÉE EST.</span>
+              <span class="val" id="det-arrival-time">13:45</span>
+            </div>
+          </div>
+
+          <div class="info-section-title">DONNÉES DU TRANSPONDEUR</div>
+          
+          <div class="telemetry-grid">
+            <div class="telemetry-card">
+              <i data-lucide="trending-up"></i>
+              <div class="telemetry-val-wrap">
+                <span class="lbl">ALTITUDE</span>
+                <span class="val" id="det-altitude">35,000 ft</span>
+                <span class="sub-val" id="det-vertical-rate">+200 ft/min</span>
+              </div>
+            </div>
+            <div class="telemetry-card">
+              <i data-lucide="gauge"></i>
+              <div class="telemetry-val-wrap">
+                <span class="lbl">VITESSE SOL</span>
+                <span class="val" id="det-speed">480 kts</span>
+                <span class="sub-val" id="det-speed-kmh">889 km/h</span>
+              </div>
+            </div>
+            <div class="telemetry-card">
+              <i data-lucide="compass"></i>
+              <div class="telemetry-val-wrap">
+                <span class="lbl">CAP</span>
+                <span class="val" id="det-heading">278°</span>
+                <span class="sub-val" id="det-heading-text">Ouest</span>
+              </div>
+            </div>
+            <div class="telemetry-card">
+              <i data-lucide="radio"></i>
+              <div class="telemetry-val-wrap">
+                <span class="lbl">SQUAWK</span>
+                <span class="val" id="det-squawk">2104</span>
+                <span class="sub-val" id="det-squawk-status">Normal</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section-title">APPAREIL & TELEMÉTRIE</div>
+          <div class="metadata-list">
+            <div class="meta-row">
+              <span class="lbl">Modèle</span>
+              <span class="val" id="det-aircraft-model">Boeing 777-328(ER)</span>
+            </div>
+            <div class="meta-row">
+              <span class="lbl">Immatriculation</span>
+              <span class="val" id="det-aircraft-reg">F-GSQN</span>
+            </div>
+            <div class="meta-row">
+              <span class="lbl">Pays de registre</span>
+              <span class="val" id="det-aircraft-country">France</span>
+            </div>
+            <div class="meta-row">
+              <span class="lbl">Coordonnées</span>
+              <span class="val" id="det-coordinates">48.8566, 2.3522</span>
+            </div>
+          </div>
+
+          <div class="action-panel">
+            <button id="det-focus-btn" class="panel-btn primary-btn"><i data-lucide="crosshair"></i> Centrer la carte</button>
+            <button id="det-simulate-ar-btn" class="panel-btn"><i data-lucide="aperture"></i> Intercepter en AR</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT SIDEBARS Container -->
+      <div id="right-sidebars-container">
+        
+        <!-- SIDEBAR A: Alerts & Logs Center -->
+        <aside id="alerts-sidebar" class="sidebar-right glass-panel closed">
+          <div class="sidebar-right-header">
+            <h3><i data-lucide="bell"></i> Alertes et Evénements</h3>
+            <button id="close-alerts-btn" class="icon-btn"><i data-lucide="x"></i></button>
+          </div>
+          <div class="sidebar-right-content" id="alerts-list">
+            <!-- Populated dynamically -->
+            <div class="no-alerts">Aucune alerte active dans le secteur.</div>
+          </div>
+        </aside>
+
+        <!-- SIDEBAR B: Airport Delay Stats & Schedules -->
+        <aside id="airports-sidebar" class="sidebar-right glass-panel closed">
+          <div class="sidebar-right-header">
+            <h3><i data-lucide="building-2"></i> Statuts des Aéroports</h3>
+            <button id="close-airports-btn" class="icon-btn"><i data-lucide="x"></i></button>
+          </div>
+          
+          <div class="airport-tabs">
+            <button class="airport-tab-btn active" data-airport="CDG">CDG</button>
+            <button class="airport-tab-btn" data-airport="JFK">JFK</button>
+            <button class="airport-tab-btn" data-airport="LHR">LHR</button>
+            <button class="airport-tab-btn" data-airport="HND">HND</button>
+            <button class="airport-tab-btn" data-airport="DXB">DXB</button>
+          </div>
+
+          <div class="sidebar-right-content" id="airport-panel-details">
+            <!-- CDG will be loaded first -->
+            <div class="airport-general-info">
+              <div class="airport-name-title">
+                <h4 id="airport-fullname">Paris Charles de Gaulle</h4>
+                <p id="airport-city">Paris, France</p>
+              </div>
+              <div class="weather-badge glass-panel">
+                <i data-lucide="cloud-sun" id="airport-weather-icon"></i>
+                <span id="airport-temp">18°C</span>
+                <span class="sub" id="airport-wind">N 12 km/h</span>
+              </div>
+            </div>
+
+            <!-- Delay Gauge -->
+            <div class="delay-indicator-section">
+              <div class="delay-gauge-container">
+                <svg class="delay-gauge" viewBox="0 0 100 100">
+                  <circle class="bg" cx="50" cy="50" r="40"></circle>
+                  <circle class="fg" id="airport-delay-gauge" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                </svg>
+                <div class="delay-score-wrap">
+                  <span class="score" id="airport-delay-index">0.0</span>
+                  <span class="label">Index de retard</span>
+                </div>
+              </div>
+              
+              <div class="delay-stats-grid">
+                <div class="delay-stat-box">
+                  <span class="val" id="airport-arr-delay">5 min</span>
+                  <span class="lbl">Retard Arrivées</span>
+                </div>
+                <div class="delay-stat-box">
+                  <span class="val" id="airport-dep-delay">8 min</span>
+                  <span class="lbl">Retard Départs</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Airport Active Flights List -->
+            <div class="airport-queues-section">
+              <div class="queue-header">
+                <span class="title">ARRIVÉES ÉMINENTES</span>
+                <span class="badge" id="airport-arrivals-count">0</span>
+              </div>
+              <div class="airport-queue-list" id="airport-arrivals-list">
+                <!-- Dynamic arrivals list -->
+              </div>
+
+              <div class="queue-header">
+                <span class="title">DÉPARTS RÈCENTS / PRÉVUS</span>
+                <span class="badge" id="airport-departures-count">0</span>
+              </div>
+              <div class="airport-queue-list" id="airport-departures-list">
+                <!-- Dynamic departures list -->
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- BOTTOM DASHBOARD: General Statistics & Airport Toggle -->
+      <footer id="bottom-dashboard" class="glass-panel">
+        <div class="bottom-nav">
+          <button id="toggle-airports-btn" class="bottom-nav-btn">
+            <i data-lucide="building-2"></i>
+            <span>Aéroports</span>
+          </button>
+          
+          <button id="toggle-history-btn" class="bottom-nav-btn">
+            <i data-lucide="history"></i>
+            <span>Historique des Vols</span>
+          </button>
+
+          <button id="toggle-military-radar-btn" class="bottom-nav-btn">
+            <i data-lucide="shield-alert"></i>
+            <span>Alertes Tactiques</span>
+          </button>
+        </div>
+
+        <!-- COLLAPSIBLE BOTTOM PANELS -->
+        <div id="bottom-collapsible-panel" class="closed glass-panel">
+          <div class="panel-header">
+            <h3 id="bottom-panel-title">Historique des Vols</h3>
+            <button id="close-bottom-panel-btn" class="icon-btn"><i data-lucide="x"></i></button>
+          </div>
+          <div class="panel-body" id="bottom-panel-content">
+            <!-- Dynamic historical log / airport statistics -->
+          </div>
+        </div>
+      </footer>
+
+      <!-- FULL SCREEN OVERLAY: Augmented Reality HUD -->
+      <div id="ar-overlay" class="hidden">
+        <!-- Background camera video feed -->
+        <video id="ar-video" autoplay playsinline muted></video>
+        
+        <!-- Custom celestial canvas fallback for desktop or fallback mode -->
+        <canvas id="ar-sky-canvas"></canvas>
+
+        <!-- AR HUD Grid layer -->
+        <div class="ar-hud-layer">
+          
+          <!-- Top Compass Ribbon -->
+          <div class="ar-compass-ribbon">
+            <div class="compass-marker-line"></div>
+            <div class="compass-tape" id="ar-compass-tape">
+              <!-- Tape marks generated via JS -->
+            </div>
+            <div class="compass-indicator">
+              <div class="compass-arrow-down"></div>
+              <span id="ar-compass-heading">000° N</span>
+            </div>
+          </div>
+
+          <!-- Crosshair and Elevation Gauge -->
+          <div class="ar-reticle-area">
+            <div class="ar-center-crosshair">
+              <div class="crosshair-circle"></div>
+              <div class="crosshair-dot"></div>
+              <div class="crosshair-left-bar"></div>
+              <div class="crosshair-right-bar"></div>
+            </div>
+
+            <!-- Elevation Tape (Pitch) -->
+            <div class="ar-pitch-ribbon">
+              <div class="pitch-tape" id="ar-pitch-tape">
+                <!-- Pitch ticks generated via JS -->
+              </div>
+              <div class="pitch-indicator">
+                <span id="ar-pitch-angle">0°</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom HUD Stats and controls -->
+          <div class="ar-bottom-controls">
+            <div class="ar-hud-status glass-panel">
+              <div class="hud-stat">
+                <span class="label">GYROSCOPE</span>
+                <span class="value" id="ar-gyro-status">CALIBRÉ</span>
+              </div>
+              <div class="hud-stat">
+                <span class="label">CIBLES EN VUE</span>
+                <span class="value" id="ar-targets-visible">0</span>
+              </div>
+              <div class="hud-stat">
+                <span class="label">MODE</span>
+                <span class="value text-teal" id="ar-mode-type">VIRTUEL</span>
+              </div>
+            </div>
+
+            <div class="ar-actions">
+              <button id="ar-toggle-camera-btn" class="ar-btn" title="Basculer Caméra Réelle/Virtuelle">
+                <i data-lucide="camera"></i>
+                <span>CAMÉRA PHYSIQUE</span>
+              </button>
+              <button id="ar-calibrate-btn" class="ar-btn" title="Réaligner le gyroscope">
+                <i data-lucide="compass"></i>
+                <span>CALIBRER CAP</span>
+              </button>
+              <button id="ar-exit-btn" class="ar-btn critical">
+                <i data-lucide="log-out"></i>
+                <span>QUITTER AR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AR Targets container for overlay cards -->
+          <div id="ar-targets-container">
+            <!-- Aircraft cards will be positioned absolutely on screen using lat/lng projection mapping -->
+          </div>
+
+          <!-- Calibration Instruction modal -->
+          <div id="ar-instructions-modal" class="glass-panel">
+            <i data-lucide="info" class="info-icon"></i>
+            <h4>Radar AR Activé</h4>
+            <p id="ar-instruction-text">Glissez sur l'écran pour orienter la caméra vers le ciel ou utilisez le gyroscope de votre téléphone. Alignez le réticule central avec les cibles pour les identifier.</p>
+            <button id="ar-instructions-close-btn">COMPRIS</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- App Entry Point -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

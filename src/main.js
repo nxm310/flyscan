@@ -2,7 +2,7 @@
    FLYRADAR — MAIN COORDINATOR ENTRY POINT
    ========================================================================== */
 
-import './style.css';
+/* Styles loaded directly via link tag in index.html */
 import { AirspaceSimulator, AIRPORTS } from './simulation.js';
 import { MapController } from './map.js';
 import { ARController } from './ar.js';

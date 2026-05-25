@@ -517,24 +517,26 @@ export class AirspaceSimulator {
   }
 
   // ──────────────────────────────────────────────
-  // Primary ADS-B source: adsb.lol (ADS-B Exchange)
-  // Endpoint: /v2/lat/{lat}/lon/{lon}/dist/{nm}
+  // Primary ADS-B source: opendata.adsb.fi
+  // Returns 'aircraft' key (not 'ac')
+  // 1000-1200 aircraft in 250nm around France
   // ──────────────────────────────────────────────
-  async _fetchAdsbLol(lat, lng, radiusNm = 200) {
-    const url = `https://api.adsb.lol/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
+  async _fetchAdsbFi(lat, lng, radiusNm = 350) {
+    const url = `https://opendata.adsb.fi/api/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       
-      // adsb.lol returns { ac: [...], total: N, now: timestamp }
-      if (!data?.ac?.length) return null;
+      // adsb.fi uses 'aircraft' key
+      const rawList = data.aircraft || data.ac || [];
+      if (!rawList.length) return null;
       
-      const flights = data.ac
-        .filter(ac => ac.lat != null && ac.lon != null && !ac.ground)
+      const flights = rawList
+        .filter(ac => ac.lat != null && ac.lon != null && ac.alt_baro !== 'ground')
         .map(ac => new LiveFlight({
           hex: ac.hex,
-          flight: ac.flight,
+          flight: (ac.flight || '').trim(),
           r: ac.r,
           t: ac.t,
           desc: ac.desc,
@@ -542,18 +544,80 @@ export class AirspaceSimulator {
           year: ac.year,
           lat: ac.lat,
           lon: ac.lon,
-          alt_baro: ac.alt_baro,
+          alt_baro: typeof ac.alt_baro === 'number' ? ac.alt_baro : null,
           alt_geom: ac.alt_geom,
-          gs: ac.gs,
+          gs: ac.gs,             // ground speed in knots
+          ias: ac.ias,           // indicated airspeed
+          tas: ac.tas,           // true airspeed
+          mach: ac.mach,
           track: ac.track,
-          baro_rate: ac.baro_rate,
+          true_heading: ac.true_heading,
+          mag_heading: ac.mag_heading,
+          baro_rate: ac.baro_rate,    // ft/min
+          geom_rate: ac.geom_rate,
           squawk: ac.squawk,
+          emergency: ac.emergency,
+          category: ac.category,
+          nav_qnh: ac.nav_qnh,
+          nav_altitude_mcp: ac.nav_altitude_mcp,
           seen: ac.seen,
           seen_pos: ac.seen_pos,
           messages: ac.messages,
           rssi: ac.rssi,
-          on_ground: ac.ground === 1,
-          country: ac.ownOp || '',
+          dist: ac.dst,           // distance from query point in nm
+          dir: ac.dir,
+          on_ground: false,
+          // Extra precision data
+          oat: ac.oat,            // outside air temp °C
+          tat: ac.tat,            // total air temp °C
+          roll: ac.roll,
+          wd: ac.wd,
+          ws: ac.ws,
+          nav_heading: ac.nav_heading,
+          spi: ac.spi,            // IDENT squitter
+          alert: ac.alert,
+          _source: 'adsb.fi',
+        }));
+      
+      return flights.length > 0 ? flights : null;
+    } catch (err) {
+      console.warn('[adsb.fi] Fetch error:', err.message);
+      return null;
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Secondary ADS-B source: adsb.lol (same format as adsb.fi)
+  // Uses 'ac' key
+  // ──────────────────────────────────────────────
+  async _fetchAdsbLol(lat, lng, radiusNm = 350) {
+    const url = `https://api.adsb.lol/v2/lat/${lat.toFixed(4)}/lon/${lng.toFixed(4)}/dist/${radiusNm}`;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      
+      // adsb.lol uses 'ac' key
+      const rawList = data.ac || data.aircraft || [];
+      if (!rawList.length) return null;
+      
+      const flights = rawList
+        .filter(ac => ac.lat != null && ac.lon != null && ac.alt_baro !== 'ground')
+        .map(ac => new LiveFlight({
+          hex: ac.hex,
+          flight: (ac.flight || '').trim(),
+          r: ac.r, t: ac.t, desc: ac.desc, ownOp: ac.ownOp, year: ac.year,
+          lat: ac.lat, lon: ac.lon,
+          alt_baro: typeof ac.alt_baro === 'number' ? ac.alt_baro : null,
+          alt_geom: ac.alt_geom,
+          gs: ac.gs, track: ac.track,
+          baro_rate: ac.baro_rate,
+          squawk: ac.squawk,
+          emergency: ac.emergency,
+          category: ac.category,
+          seen: ac.seen, messages: ac.messages, rssi: ac.rssi,
+          on_ground: false,
+          _source: 'adsb.lol',
         }));
       
       return flights.length > 0 ? flights : null;
@@ -564,40 +628,38 @@ export class AirspaceSimulator {
   }
 
   // ──────────────────────────────────────────────
-  // Fallback ADS-B source: OpenSky Network
+  // Tertiary ADS-B source: OpenSky Network
+  // Wider bounding box for max coverage
   // ──────────────────────────────────────────────
-  async _fetchOpenSky(lat, lng, radiusDeg = 3.5) {
+  async _fetchOpenSky(lat, lng, radiusDeg = 5.0) {
     const lamin = (lat - radiusDeg * 0.7).toFixed(4);
-    const lomin = (lng - radiusDeg * 1.1).toFixed(4);
+    const lomin = (lng - radiusDeg * 1.4).toFixed(4);
     const lamax = (lat + radiusDeg * 0.7).toFixed(4);
-    const lomax = (lng + radiusDeg * 1.1).toFixed(4);
+    const lomax = (lng + radiusDeg * 1.4).toFixed(4);
     const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
     
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data?.states?.length) return null;
       
       const flights = data.states
-        .filter(s => s[5] != null && s[6] != null && !s[8]) // must have lat/lng, not on ground
+        .filter(s => s[5] != null && s[6] != null && !s[8]) // lat/lng valid, not on ground
         .map(s => new LiveFlight({
           icao24: s[0],
           callsign: (s[1] || '').trim(),
           country: s[2] || '',
           lon: s[5],
           lat: s[6],
-          alt_baro: s[7],        // baro altitude in meters for OpenSky
-          altitude_m: s[7],      // OpenSky gives meters directly!
+          altitude_m: s[7],      // OpenSky gives meters directly
           on_ground: s[8],
-          velocity: s[9] || 0,   // m/s → convert to kts below
+          gs: s[9] != null ? s[9] * 1.94384 : 0,  // m/s → knots
           true_track: s[10] || 0,
-          vertical_rate: s[11] || 0, // m/s
+          baro_rate: s[11] != null ? s[11] * 196.85 : 0, // m/s → ft/min
           squawk: s[14] || '2000',
+          _source: 'opensky',
         }));
-      
-      // Fix speeds: OpenSky gives m/s, convert to knots
-      flights.forEach(f => { f.speed = Math.round((f.speed || 0) * 1.94384); });
       
       return flights.length > 0 ? flights : null;
     } catch (err) {
@@ -609,14 +671,20 @@ export class AirspaceSimulator {
   // ──────────────────────────────────────────────
   // Main public method: fetch live data
   // ──────────────────────────────────────────────
-  async fetchAndApplyLiveStates(lat = 46.8, lng = 2.5) {
-    // Try adsb.lol first (more aircraft, no rate limits)
-    let liveFlights = await this._fetchAdsbLol(lat, lng, 200);
-    let source = 'adsb.lol';
+  async fetchAndApplyLiveStates(lat = 48.85, lng = 2.35) {
+    // 1. Try adsb.fi FIRST (returns 'aircraft' key, 1000+ results in 350nm)
+    let liveFlights = await this._fetchAdsbFi(lat, lng, 350);
+    let source = 'adsb.fi';
     
-    if (!liveFlights) {
-      // Fallback to OpenSky
-      liveFlights = await this._fetchOpenSky(lat, lng, 3.5);
+    if (!liveFlights || liveFlights.length < 10) {
+      // 2. Fallback to adsb.lol
+      liveFlights = await this._fetchAdsbLol(lat, lng, 350);
+      source = 'adsb.lol';
+    }
+    
+    if (!liveFlights || liveFlights.length < 10) {
+      // 3. Last resort: OpenSky with wide bounding box
+      liveFlights = await this._fetchOpenSky(lat, lng, 5.0);
       source = 'opensky';
     }
     

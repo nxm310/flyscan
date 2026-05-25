@@ -3,6 +3,7 @@
    ========================================================================== */
 
 import { AIRPORTS } from './simulation.js';
+import { fetchAirportWeather, windDirToCompass } from './weather.js';
 
 export class UIController {
   constructor(appState) {
@@ -415,7 +416,7 @@ export class UIController {
     lucide.createIcons();
   }
 
-  updateAirportStatsPanel() {
+  async updateAirportStatsPanel() {
     const code = this.currentAirportCode;
     const apData = AIRPORTS[code] || AIRPORTS.CDG;
 
@@ -423,71 +424,144 @@ export class UIController {
     document.getElementById('airport-fullname').innerText = apData.name;
     document.getElementById('airport-city').innerText = `${apData.city}, ${apData.country}`;
 
-    // Temperature & wind
-    document.getElementById('airport-temp').innerText = `${apData.temp}°C`;
-    document.getElementById('airport-wind').innerText = `Vent: ${apData.windDir}° @ ${apData.windSpeed} km/h`;
+    // Show placeholder while fetching real weather
+    document.getElementById('airport-temp').innerText = 'Chargement...';
+    document.getElementById('airport-wind').innerText = 'Vent: ...';
 
-    // Dynamic weather icon based on temperature
-    const weatherIcon = document.getElementById('airport-weather-icon');
-    if (apData.temp > 28) {
-      weatherIcon.setAttribute('data-lucide', 'sun');
-    } else if (apData.temp < 10) {
-      weatherIcon.setAttribute('data-lucide', 'cloud-snow');
+    // Fetch REAL weather from Open-Meteo (async)
+    const wx = await fetchAirportWeather(code, apData.lat, apData.lng);
+
+    if (wx) {
+      const tempStr = `${wx.tempC}°C`;
+      const feelsStr = `(ressenti ${wx.feelsLike}°C)`;
+      document.getElementById('airport-temp').innerText = `${tempStr} ${feelsStr}`;
+      document.getElementById('airport-wind').innerText =
+        `Vent: ${windDirToCompass(wx.windDir)} ${wx.windDir}° @ ${wx.windSpeedKmh} km/h — ${wx.description}`;
+      
+      // Dynamic weather icon
+      const weatherIcon = document.getElementById('airport-weather-icon');
+      weatherIcon.setAttribute('data-lucide', wx.conditionIcon);
+      lucide.createIcons();
+      
+      // Extra weather details (humidity, pressure)
+      const extRow = document.getElementById('airport-weather-extra');
+      if (extRow) {
+        extRow.innerText = `💧 Humidité: ${wx.humidity}% · 🔵 Pression: ${wx.pressure} hPa · Mis à jour: ${wx.fetchedAt}`;
+      }
     } else {
-      weatherIcon.setAttribute('data-lucide', 'cloud-sun');
+      document.getElementById('airport-temp').innerText = 'Données météo indisponibles';
+      document.getElementById('airport-wind').innerText = 'Vérifiez votre connexion réseau';
     }
 
     // Delay Index Rating Gauge Circle animation
     // Circle length = 2 * PI * r = 2 * 3.14 * 40 = 251.2
-    const dashoffset = 251.2 - (apData.delayIndex / 10.0) * 251.2;
+    // Compute delay index from real data: count aircraft within 50km of airport
+    const allFlights = this.appState.simulation.flights;
+    const nearbyFlights = allFlights.filter(f => {
+      const dlat = f.lat - apData.lat;
+      const dlng = f.lng - apData.lng;
+      const distDeg = Math.sqrt(dlat*dlat + dlng*dlng);
+      return distDeg < 0.5; // ~55km radius around airport
+    });
+    
+    // Compute a dynamic delay index based on traffic density (real data)
+    const dynamicDelayIndex = Math.min(9.9, nearbyFlights.length * 0.8);
+    const displayDelayIndex = this.appState.simulation.mode === 'live'
+      ? dynamicDelayIndex
+      : (apData.delayIndex || 1.5);
+    
+    const dashoffset = 251.2 - (displayDelayIndex / 10.0) * 251.2;
     const gaugeCircle = document.getElementById('airport-delay-gauge');
     gaugeCircle.style.strokeDashoffset = dashoffset;
     
-    // Delay index color coding
-    if (apData.delayIndex > 5.0) {
+    if (displayDelayIndex > 5.0) {
       gaugeCircle.style.stroke = 'var(--color-emergency)';
-    } else if (apData.delayIndex > 2.5) {
+    } else if (displayDelayIndex > 2.5) {
       gaugeCircle.style.stroke = 'var(--color-warning)';
     } else {
       gaugeCircle.style.stroke = 'var(--color-primary)';
     }
 
-    document.getElementById('airport-delay-index').innerText = apData.delayIndex.toFixed(1);
+    document.getElementById('airport-delay-index').innerText = displayDelayIndex.toFixed(1);
     
-    // Average delay values
-    const arrDelay = Math.round(apData.delayIndex * 6);
-    const depDelay = Math.round(apData.delayIndex * 8);
+    // Average delay values (computed from real traffic density)
+    const arrDelay = Math.round(displayDelayIndex * 5);
+    const depDelay = Math.round(displayDelayIndex * 7);
     document.getElementById('airport-arr-delay').innerText = `${arrDelay} min`;
     document.getElementById('airport-dep-delay').innerText = `${depDelay} min`;
 
-    // arrivals/departures count matching flights list
-    const arrivals = this.appState.simulation.flights.filter(f => f.destination.code === code);
-    const departures = this.appState.simulation.flights.filter(f => f.origin.code === code);
+    // Arrivals: aircraft flying TOWARD this airport (heading within 45° of airport bearing)
+    // and within 300km. Sorted by distance (closest = most imminent arrival).
+    const arrivals = allFlights
+      .filter(f => {
+        const dlat = apData.lat - f.lat;
+        const dlng = apData.lng - f.lng;
+        const distDeg = Math.sqrt(dlat*dlat + dlng*dlng);
+        if (distDeg > 3.0) return false; // max ~330km
+        // Bearing from flight to airport
+        const bearing = (Math.atan2(dlng, dlat) * 180 / Math.PI + 360) % 360;
+        const hdgDiff = Math.abs(((f.heading - bearing) + 180 + 360) % 360 - 180);
+        return hdgDiff < 50; // heading within 50° of airport
+      })
+      .sort((a, b) => {
+        const da = Math.hypot(a.lat - apData.lat, a.lng - apData.lng);
+        const db = Math.hypot(b.lat - apData.lat, b.lng - apData.lng);
+        return da - db;
+      });
+
+    // Departures: aircraft flying AWAY from this airport within 100km
+    const departures = allFlights
+      .filter(f => {
+        const dlat = apData.lat - f.lat;
+        const dlng = apData.lng - f.lng;
+        const distDeg = Math.sqrt(dlat*dlat + dlng*dlng);
+        if (distDeg > 1.0 || distDeg < 0.01) return false; // within ~110km but not at 0
+        // Bearing from airport to flight (departing direction)
+        const bearing = (Math.atan2(-dlng, -dlat) * 180 / Math.PI + 360) % 360;
+        const hdgDiff = Math.abs(((f.heading - bearing) + 180 + 360) % 360 - 180);
+        return hdgDiff < 60; // heading away from airport
+      })
+      .sort((a, b) => {
+        const da = Math.hypot(a.lat - apData.lat, a.lng - apData.lng);
+        const db = Math.hypot(b.lat - apData.lat, b.lng - apData.lng);
+        return da - db;
+      });
 
     document.getElementById('airport-arrivals-count').innerText = arrivals.length;
     document.getElementById('airport-departures-count').innerText = departures.length;
+
+    const now = new Date();
+    const fmtTime = (f) => {
+      // Estimate ETA: distance / speed
+      const distKm = Math.hypot(f.lat - apData.lat, f.lng - apData.lng) * 111;
+      const etaMin = f.speed > 0 ? Math.round(distKm / (f.speed * 1.852 / 60)) : '?';
+      const eta = new Date(now.getTime() + etaMin * 60000);
+      return isNaN(eta) ? '--:--' : eta.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    };
 
     // Render arrivals rows
     const arrListEl = document.getElementById('airport-arrivals-list');
     arrListEl.innerHTML = '';
     
     if (arrivals.length === 0) {
-      arrListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucune arrivée imminente.</div>';
+      arrListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucune arrivée détectée en approche.</div>';
     } else {
-      arrivals.slice(0, 3).forEach(arr => {
+      arrivals.slice(0, 5).forEach(arr => {
+        const distKm = Math.round(Math.hypot(arr.lat - apData.lat, arr.lng - apData.lng) * 111);
         const row = document.createElement('div');
         row.className = 'queue-flight-row';
         row.innerHTML = `
           <span class="q-flight-nr">${arr.flightNumber}</span>
-          <span class="q-flight-route">Prov. ${arr.origin.code}</span>
-          <span class="q-flight-time">Est. 13:40</span>
-          <span class="q-flight-status ${arr.progress > 0.9 ? 'landed' : 'ontime'}">
-            ${arr.progress > 0.9 ? 'FINALE' : 'RETARD'}
+          <span class="q-flight-route">${distKm} km</span>
+          <span class="q-flight-time">${fmtTime(arr)}</span>
+          <span class="q-flight-status ${distKm < 30 ? 'landed' : 'ontime'}">
+            ${distKm < 30 ? 'FINALE' : 'EN ROUTE'}
           </span>
         `;
         row.addEventListener('click', () => {
           this.selectFlight(arr);
           this.appState.map.focusOnFlight(arr);
+          this._closeSidebarsOnly();
         });
         arrListEl.appendChild(row);
       });
@@ -498,20 +572,22 @@ export class UIController {
     depListEl.innerHTML = '';
     
     if (departures.length === 0) {
-      depListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucun départ programmé.</div>';
+      depListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucun départ détecté à proximité.</div>';
     } else {
-      departures.slice(0, 3).forEach(dep => {
+      departures.slice(0, 5).forEach(dep => {
+        const distKm = Math.round(Math.hypot(dep.lat - apData.lat, dep.lng - apData.lng) * 111);
         const row = document.createElement('div');
         row.className = 'queue-flight-row';
         row.innerHTML = `
           <span class="q-flight-nr">${dep.flightNumber}</span>
-          <span class="q-flight-route">Dest. ${dep.destination.code}</span>
-          <span class="q-flight-time">Prévu 12:15</span>
+          <span class="q-flight-route">${dep.heading.toFixed(0)}° – ${dep.speed} kts</span>
+          <span class="q-flight-time">${distKm} km</span>
           <span class="q-flight-status ontime">MONTÉE</span>
         `;
         row.addEventListener('click', () => {
           this.selectFlight(dep);
           this.appState.map.focusOnFlight(dep);
+          this._closeSidebarsOnly();
         });
         depListEl.appendChild(row);
       });

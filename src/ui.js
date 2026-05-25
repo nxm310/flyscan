@@ -220,6 +220,27 @@ export class UIController {
         document.getElementById('emergency-banner').classList.add('hidden');
       });
     }
+
+    // Collapsible Header Logic (Mobile/iPhone only)
+    document.addEventListener('click', (e) => {
+      // Only run on mobile viewport
+      if (window.innerWidth > 900) return;
+      
+      const header = document.getElementById('main-header');
+      if (!header) return;
+      
+      const isMapClick = e.target.id === 'map' || e.target.classList.contains('leaflet-container') || e.target.closest('.leaflet-container');
+      
+      if (isMapClick) {
+        // Collapse header when clicking on the map
+        header.classList.add('collapsed-header');
+        document.body.classList.add('has-collapsed-header');
+      } else if (header.contains(e.target)) {
+        // Expand header when clicking anywhere on the header itself
+        header.classList.remove('collapsed-header');
+        document.body.classList.remove('has-collapsed-header');
+      }
+    });
   }
 
   // --- Internal helper: close sidebars without touching selected flight ---

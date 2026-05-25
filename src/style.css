@@ -347,6 +347,7 @@ html, body {
   justify-content: space-between;
   padding: 0 20px;
   border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-area {
@@ -2349,13 +2350,57 @@ html, body {
   #main-header {
     flex-wrap: wrap;
     height: auto;
-    padding: 12px;
-    gap: 10px;
+    padding: 8px 12px;
+    gap: 8px;
     border-radius: 8px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
   }
 
-  .logo-area {
-    width: auto;
+  #main-header.collapsed-header {
+    height: 48px;
+    padding: 6px 12px;
+    gap: 0;
+    overflow: hidden;
+    background: rgba(10, 25, 47, 0.95);
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+    cursor: pointer;
+  }
+
+  #main-header.collapsed-header .search-bar-container,
+  #main-header.collapsed-header .filter-controls,
+  #main-header.collapsed-header .action-buttons {
+    display: none !important;
+  }
+
+  #main-header.collapsed-header .logo-area {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #main-header.collapsed-header .logo-area::after {
+    content: '▼ Filtres / Menu';
+    font-size: 0.7rem;
+    color: var(--color-primary);
+    background: rgba(0, 242, 254, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 242, 254, 0.2);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .logo-text h2 {
+    font-size: 1.05rem;
   }
 
   .search-bar-container {
@@ -2388,18 +2433,19 @@ html, body {
   
   .primary-action-btn {
     padding: 0;
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     justify-content: center;
   }
 
   .sidebar {
-    top: 195px;
+    top: 185px;
     left: 0;
     width: 100%;
     bottom: 60px;
     border-radius: 12px 12px 0 0;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
   }
 
   .sidebar.closed {
@@ -2408,11 +2454,20 @@ html, body {
   }
 
   #right-sidebars-container {
-    top: 195px;
+    top: 185px;
     right: 0;
     left: 0;
     width: 100%;
     bottom: 60px;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  }
+
+  body.has-collapsed-header .sidebar {
+    top: 70px;
+  }
+
+  body.has-collapsed-header #right-sidebars-container {
+    top: 70px;
   }
 
   .sidebar-right {

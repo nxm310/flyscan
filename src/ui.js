@@ -170,6 +170,23 @@ export class UIController {
         this.handleGeolocation();
       });
     }
+
+    // Global mute sound button click
+    const muteBtn = document.getElementById('mute-sound-btn');
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        this.toggleSoundMute();
+      });
+    }
+
+    // Emergency banner mute/silence button click
+    const emgMuteBtn = document.getElementById('emergency-mute-btn');
+    if (emgMuteBtn) {
+      emgMuteBtn.addEventListener('click', () => {
+        this.toggleSoundMute(true); // force mute
+        document.getElementById('emergency-banner').classList.add('hidden');
+      });
+    }
   }
 
   // --- Flight Selection & Sidbar UI ---
@@ -628,47 +645,63 @@ export class UIController {
   }
 
   synthesizeWarningBeep() {
+    // 1. Check if sound notifications are muted
+    if (this.appState.soundMuted) return;
+
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-
-      osc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Pitch
-      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime); // Soft volume
-
-      osc.start();
       
-      // Triple pulse sound
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-      
-      setTimeout(() => {
-        const osc2 = audioCtx.createOscillator();
-        const gain2 = audioCtx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(audioCtx.destination);
-        osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain2.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        osc2.start();
-        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-      }, 250);
+      const playBeepNode = (frequency, duration, delayTime) => {
+        setTimeout(() => {
+          // Double check mute status before playing delayed note
+          if (this.appState.soundMuted) return;
 
-      setTimeout(() => {
-        const osc3 = audioCtx.createOscillator();
-        const gain3 = audioCtx.createGain();
-        osc3.connect(gain3);
-        gain3.connect(audioCtx.destination);
-        osc3.frequency.setValueAtTime(1100, audioCtx.currentTime); // Higher pitch ending
-        gain3.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        osc3.start();
-        gain3.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-      }, 500);
+          const oscNode = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+
+          oscNode.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          oscNode.type = 'sine';
+          oscNode.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+          oscNode.start();
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          
+          // CRITICAL MEMORY/AUDIO FIX: Always call stop explicitly to release the oscillator resource!
+          oscNode.stop(audioCtx.currentTime + duration + 0.05);
+        }, delayTime);
+      };
+
+      // Play high-tech triple-pulse warning beep sequence
+      playBeepNode(880, 0.15, 0);
+      playBeepNode(880, 0.15, 250);
+      playBeepNode(1100, 0.3, 500);
 
     } catch (e) {
       console.warn("Web Audio API warning beeps not supported", e);
+    }
+  }
+
+  toggleSoundMute(forceMute = null) {
+    if (forceMute !== null) {
+      this.appState.soundMuted = forceMute;
+    } else {
+      this.appState.soundMuted = !this.appState.soundMuted;
+    }
+
+    const muteBtnIcon = document.querySelector('#mute-sound-btn i');
+    if (muteBtnIcon) {
+      if (this.appState.soundMuted) {
+        muteBtnIcon.setAttribute('data-lucide', 'volume-x');
+        this.showToast("Alertes sonores désactivées.");
+      } else {
+        muteBtnIcon.setAttribute('data-lucide', 'volume-2');
+        this.showToast("Alertes sonores activées.");
+      }
+      // Re-trigger Lucide icons parsing to swap the speaker icon shapes dynamically
+      lucide.createIcons();
     }
   }
 

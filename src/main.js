@@ -14,7 +14,8 @@ const appState = {
   ar: null,
   ui: null,
   selectedFlight: null,
-  filterCategory: 'all'
+  filterCategory: 'all',
+  soundMuted: false
 };
 
 document.addEventListener('DOMContentLoaded', () => {

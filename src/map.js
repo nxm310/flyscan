@@ -18,9 +18,8 @@ export class MapController {
     this.map = L.map('map', {
       zoomControl: false,
       attributionControl: false,
-      maxBounds: [[35, -20], [60, 25]], // Restrict around Europe/France
-      minZoom: 4,
-      maxZoom: 12
+      minZoom: 3,
+      maxZoom: 14
     }).setView([lat, lng], zoom);
 
     // Zoom control in top right
@@ -42,6 +41,9 @@ export class MapController {
       lineJoin: 'round',
       className: 'glowing-flight-trail'
     }).addTo(this.map);
+
+    // User location marker (initially null)
+    this.userLocationMarker = null;
 
     // Click map to deselect
     this.map.on('click', (e) => {
@@ -169,5 +171,29 @@ export class MapController {
       animate: true,
       duration: 1.5
     });
+  }
+
+  setUserLocationMarker(lat, lng) {
+    // Remove old marker if exists
+    if (this.userLocationMarker) {
+      this.map.removeLayer(this.userLocationMarker);
+    }
+
+    // Create a pulsing dot for the user's location
+    const userIcon = L.divIcon({
+      html: `
+        <div class="user-location-marker">
+          <div class="user-location-pulse"></div>
+          <div class="user-location-dot"></div>
+        </div>
+      `,
+      className: '',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    this.userLocationMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+      .addTo(this.map)
+      .bindTooltip('Votre position', { permanent: false, direction: 'right' });
   }
 }

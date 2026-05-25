@@ -128,14 +128,19 @@ export class UIController {
 
     // Emergency Banner Buttons
     document.getElementById('emergency-focus-btn').addEventListener('click', () => {
-      const activeAlert = this.appState.simulation.alerts[0];
-      if (activeAlert) {
-        const flight = this.appState.simulation.flights.find(f => f.id === activeAlert.flightId);
-        if (flight) {
-          this.selectFlight(flight);
-          this.appState.map.focusOnFlight(flight);
-          document.getElementById('emergency-banner').classList.add('hidden');
-        }
+      // Try each alert to find an active flight
+      let foundFlight = null;
+      for (const alert of this.appState.simulation.alerts) {
+        foundFlight = this.appState.simulation.flights.find(f => f.id === alert.flightId);
+        if (foundFlight) break;
+      }
+      if (foundFlight) {
+        this.selectFlight(foundFlight);
+        this.appState.map.focusOnFlight(foundFlight);
+        document.getElementById('emergency-banner').classList.add('hidden');
+      } else {
+        this.showToast("Le vol en urgence a quitté le secteur radar.");
+        document.getElementById('emergency-banner').classList.add('hidden');
       }
     });
 
@@ -189,13 +194,25 @@ export class UIController {
     }
   }
 
-  // --- Flight Selection & Sidbar UI ---
+  // --- Internal helper: close sidebars without touching selected flight ---
+  _closeSidebarsOnly() {
+    const alertsSidebar = document.getElementById('alerts-sidebar');
+    const airportsSidebar = document.getElementById('airports-sidebar');
+    const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
+    alertsSidebar.classList.remove('open');
+    airportsSidebar.classList.remove('open');
+    bottomNavButtons.forEach(btn => btn.classList.remove('active'));
+  }
+
+  // --- Flight Selection & Sidebar UI ---
   selectFlight(flight) {
     this.appState.selectedFlight = flight;
     
-    // Close other sidebars to avoid overlap
-    this.toggleRightSidebar('');
-    this.toggleBottomPanel('');
+    // Close right sidebars and bottom panel without triggering deselectFlight recursion
+    this._closeSidebarsOnly();
+    const panel = document.getElementById('bottom-collapsible-panel');
+    if (panel) panel.classList.remove('open-panel');
+    this.activeBottomTab = '';
 
     // Toggle Left Sidebar
     const sidebar = document.getElementById('flight-details-sidebar');
@@ -217,7 +234,9 @@ export class UIController {
   deselectFlight() {
     this.appState.selectedFlight = null;
     document.getElementById('flight-details-sidebar').classList.add('closed');
-    this.appState.map.updateMarkers(this.appState.simulation.flights, null, this.appState.filterCategory);
+    if (this.appState.map && this.appState.map.map) {
+      this.appState.map.updateMarkers(this.appState.simulation.flights, null, this.appState.filterCategory);
+    }
   }
 
   updateFlightDetailsPanel(flight) {
@@ -300,27 +319,21 @@ export class UIController {
 
   // --- Right Sidebars Navigation (Alerts / Airports) ---
   toggleRightSidebar(type) {
-    const alertsSidebar = document.getElementById('alerts-sidebar');
-    const airportsSidebar = document.getElementById('airports-sidebar');
-    const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
-
-    // Deselect selected flight to focus on other sections
+    // Close the left flight details sidebar without recursion
     this.deselectFlight();
 
-    // Reset styles
-    alertsSidebar.classList.remove('open');
-    airportsSidebar.classList.remove('open');
-    bottomNavButtons.forEach(btn => btn.classList.remove('active'));
+    // Reset right sidebars
+    this._closeSidebarsOnly();
 
     if (type === 'alerts') {
-      alertsSidebar.classList.add('open');
+      document.getElementById('alerts-sidebar').classList.add('open');
       document.getElementById('alerts-toggle-btn').classList.add('active');
       this.renderAlertsSidebar();
       
       // Hide badge once read
       document.getElementById('alerts-badge').classList.add('hidden');
     } else if (type === 'airports') {
-      airportsSidebar.classList.add('open');
+      document.getElementById('airports-sidebar').classList.add('open');
       document.getElementById('toggle-airports-btn').classList.add('active');
       this.updateAirportStatsPanel();
     }
@@ -484,8 +497,8 @@ export class UIController {
     panel.classList.remove('open-panel');
     bottomNavButtons.forEach(btn => btn.classList.remove('active'));
 
-    // Close sidebars
-    this.toggleRightSidebar('');
+    // Close right sidebars without recursion through deselectFlight
+    this._closeSidebarsOnly();
 
     if (tab === this.activeBottomTab || tab === '') {
       this.activeBottomTab = '';
@@ -691,17 +704,21 @@ export class UIController {
       this.appState.soundMuted = !this.appState.soundMuted;
     }
 
-    const muteBtnIcon = document.querySelector('#mute-sound-btn i');
-    if (muteBtnIcon) {
+    const muteBtn = document.getElementById('mute-sound-btn');
+    if (muteBtn) {
       if (this.appState.soundMuted) {
-        muteBtnIcon.setAttribute('data-lucide', 'volume-x');
+        muteBtn.innerHTML = '<i data-lucide="volume-x"></i>';
+        muteBtn.title = 'Activer les sons d\'alertes';
+        muteBtn.classList.add('muted');
         this.showToast("Alertes sonores désactivées.");
       } else {
-        muteBtnIcon.setAttribute('data-lucide', 'volume-2');
+        muteBtn.innerHTML = '<i data-lucide="volume-2"></i>';
+        muteBtn.title = 'Couper les sons d\'alertes';
+        muteBtn.classList.remove('muted');
         this.showToast("Alertes sonores activées.");
       }
-      // Re-trigger Lucide icons parsing to swap the speaker icon shapes dynamically
-      lucide.createIcons();
+      // Re-trigger Lucide icons rendering for the swapped icon
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
   }
 
@@ -851,32 +868,56 @@ export class UIController {
       return;
     }
 
-    this.showToast("Accès GPS en cours...");
+    // Visual feedback: animate the geolocate button
+    const geoBtn = document.getElementById('geolocate-btn');
+    if (geoBtn) geoBtn.classList.add('loading');
+    this.showToast("📡 Accès GPS en cours...");
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // 1. Clear existing flights and regenerate flights around the user
-        this.appState.simulation.regenerateAirspaceAround(latitude, longitude);
-        
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+
+        if (geoBtn) geoBtn.classList.remove('loading');
+
+        // 1. Place a "you are here" marker on the map
+        this.appState.map.setUserLocationMarker(latitude, longitude);
+
         // 2. Center 2D Map on user position
-        this.appState.map.map.setView([latitude, longitude], 7);
-        
-        // 3. Update the 2D plane markers and trails
+        this.appState.map.map.flyTo([latitude, longitude], 8, { animate: true, duration: 1.5 });
+
+        // 3. Try to fetch live ADS-B data around user location first
+        this.showToast("🛰️ Téléchargement des vols ADS-B autour de vous...");
+        const liveSuccess = await this.appState.simulation.fetchAndApplyLiveStates(latitude, longitude);
+
+        if (liveSuccess) {
+          this.showToast(`✅ ${this.appState.simulation.flights.length} vols ADS-B réels détectés à proximité !`);
+          const logoTag = document.querySelector('.logo-text .tag');
+          if (logoTag) {
+            logoTag.innerText = 'DIRECT ADS-B';
+            logoTag.style.color = 'var(--color-primary)';
+          }
+        } else {
+          // Fallback: generate simulated airspace around user
+          this.appState.simulation.regenerateAirspaceAround(latitude, longitude);
+          this.showToast("📡 Espace aérien simulé autour de votre position.");
+        }
+
+        // 4. Update the 2D plane markers and trails
         this.appState.map.updateMarkers(
-          this.appState.simulation.flights, 
-          null, 
+          this.appState.simulation.flights,
+          null,
           this.appState.filterCategory
         );
-        
-        this.showToast("Espace aérien synchronisé autour de votre position !");
       },
       (error) => {
+        if (geoBtn) geoBtn.classList.remove('loading');
         console.error("Geolocation error", error);
-        this.showToast("Impossible d'obtenir votre position. Utilisation de la position par défaut (Paris).");
+        let msg = "Impossible d'obtenir votre position GPS.";
+        if (error.code === 1) msg = "Accès GPS refusé. Vérifiez les permissions du navigateur.";
+        else if (error.code === 3) msg = "Délai GPS dépassé. Réessayez dans un moment.";
+        this.showToast(msg);
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
 }

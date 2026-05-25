@@ -771,6 +771,55 @@ html, body {
   100% { transform: translate(-1px, 1px) scale(1.1); }
 }
 
+/* ============================
+   User Location Marker
+   ============================ */
+.user-location-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-location-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4fc3f7;
+  border: 2px solid #fff;
+  box-shadow: 0 0 8px rgba(79, 195, 247, 0.9);
+  z-index: 2;
+}
+
+.user-location-pulse {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(79, 195, 247, 0.3);
+  animation: user-loc-pulse 2s ease-out infinite;
+}
+
+@keyframes user-loc-pulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Geolocate button loading state */
+#geolocate-btn.loading {
+  animation: spin-clockwise 1s linear infinite;
+  opacity: 0.7;
+}
+
+/* Muted sound button state */
+#mute-sound-btn.muted {
+  color: var(--color-emergency);
+  border-color: rgba(255, 46, 99, 0.4);
+}
+
+
 /* ==========================================================================
    6. Left Sidebar: Flight Details Panel
    ========================================================================== */

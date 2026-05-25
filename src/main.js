@@ -18,9 +18,19 @@ const appState = {
   soundMuted: false
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Lucide icons on start
-  lucide.createIcons();
+// Safe Lucide initializer — waits until the library is loaded (it uses defer)
+function initLucide() {
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  } else {
+    // Retry after a short delay if not loaded yet
+    setTimeout(initLucide, 50);
+  }
+}
+
+window.addEventListener('load', () => {
+  // All scripts (including deferred ones) are guaranteed loaded at window.load
+  initLucide();
 
   // Begin loading sequence
   startAppLoading();

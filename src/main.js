@@ -74,6 +74,21 @@ async function startAppLoading() {
     
     appState.map.init(46.8, 2.5, 6);
 
+    // Listen to manual map drags/pans to instantly load live flights for the newly positioned area!
+    let moveTimeout = null;
+    appState.map.map.on('moveend', () => {
+      if (appState.simulation.mode !== 'live') return;
+      
+      clearTimeout(moveTimeout);
+      moveTimeout = setTimeout(async () => {
+        const center = appState.map.map.getCenter();
+        const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
+        if (result.success) {
+          appState.ui.showToast(`🛰️ Radar calé sur ce secteur : ${result.count} vols.`);
+        }
+      }, 800); // 800ms debounce to prevent API spam while dragging
+    });
+
     // Step 4: Initialize Augmented Reality HUD
     await sleep(300);
     updateProgress(78, "Chargement du HUD Réalité Augmentée...");

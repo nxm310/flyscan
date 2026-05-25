@@ -2,16 +2,16 @@
    FLYRADAR — MAIN COORDINATOR ENTRY POINT
    ========================================================================== */
 
-/* Styles loaded directly via link tag in index.html */
+import './style.css';
 import { AirspaceSimulator, AIRPORTS } from './simulation.js';
-import { MapController } from './map.js';
+import { Radar3DController } from './radar3d.js';
 import { ARController } from './ar.js';
 import { UIController } from './ui.js';
 
 // Global application state object
 const appState = {
   simulation: null,
-  map: null,
+  radar3D: null,
   ar: null,
   ui: null,
   selectedFlight: null,
@@ -41,17 +41,17 @@ async function startAppLoading() {
     appState.simulation = new AirspaceSimulator();
     
     // Step 2: Initialize Airspace flight vectors
-    await sleep(400);
+    await sleep(450);
     updateProgress(35, "Génération de l'espace aérien en temps réel...");
     appState.simulation.initialize();
 
-    // Step 3: Initialize Interactive Leaflet Map
-    await sleep(400);
-    updateProgress(55, "Chargement des cartes radar tactiques...");
+    // Step 3: Initialize Three.js 3D Radar Space
+    await sleep(450);
+    updateProgress(60, "Chargement du dôme radar 3D WebGL...");
     
-    // Create map controller
-    appState.map = new MapController((flight) => {
-      // Click callback on map flights
+    // Create Three.js 3D Radar controller
+    appState.radar3D = new Radar3DController((flight) => {
+      // Click selection callback on 3D flights
       if (flight) {
         appState.ui.selectFlight(flight);
       } else {
@@ -59,31 +59,32 @@ async function startAppLoading() {
       }
     });
     
-    // Focus around central France/Europe coordinates (Paris hubs)
-    appState.map.init(46.8, 2.5, 6);
+    // Initialize 3D renderer and camera orbit mechanics
+    appState.radar3D.appState = appState; // inject reference
+    appState.radar3D.init();
 
     // Step 4: Initialize Augmented Reality HUD
-    await sleep(400);
+    await sleep(450);
     updateProgress(75, "Chargement du HUD Réalité Augmentée...");
     appState.ar = new ARController(appState);
     appState.ar.initElements();
 
     // Step 5: Initialize UI panels and sidebars listeners
-    await sleep(400);
-    updateProgress(90, "Lancement du tableau de bord...");
+    await sleep(450);
+    updateProgress(90, "Lancement du tableau de bord tactique...");
     appState.ui = new UIController(appState);
     appState.ui.init();
 
-    // Render initial flight markers
-    appState.map.updateMarkers(
+    // Render initial flight vectors in 3D
+    appState.radar3D.update3DAirspace(
       appState.simulation.flights, 
       null, 
       appState.filterCategory
     );
 
     // Step 6: Finalize load and fade splash screen
-    await sleep(600);
-    updateProgress(100, "Systèmes ADSB synchronisés.");
+    await sleep(650);
+    updateProgress(100, "Systèmes ADSB 3D synchronisés.");
     
     const splash = document.getElementById('splash-screen');
     splash.classList.add('fade-out');
@@ -96,7 +97,7 @@ async function startAppLoading() {
     
   } catch (err) {
     console.error("Flyradar initialization crash", err);
-    statusText.innerText = "CRITICAL ERROR: Échec de l'ADS-B";
+    statusText.innerText = "CRITICAL ERROR: Échec de l'initialisation WebGL";
     statusText.style.color = "var(--color-emergency)";
   }
 }
@@ -109,8 +110,8 @@ function startSimulationLoops() {
     // Tick airspace physics
     appState.simulation.tick(dt);
     
-    // Update map positions
-    appState.map.updateMarkers(
+    // Update Three.js 3D positions, altitude vectors, and flight trails
+    appState.radar3D.update3DAirspace(
       appState.simulation.flights, 
       appState.selectedFlight?.id, 
       appState.filterCategory

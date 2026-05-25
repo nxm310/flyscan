@@ -59,6 +59,22 @@ export class UIController {
 
 
 
+    // Theme Toggle Button (Map Only)
+    let isLightMode = false;
+    document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+      isLightMode = !isLightMode;
+      this.appState.map.switchTheme(isLightMode);
+      // Change the button appearance slightly so user knows it's toggled
+      const btn = document.getElementById('theme-toggle-btn');
+      if (isLightMode) {
+        btn.style.background = 'rgba(255, 255, 255, 0.9)';
+        btn.style.color = '#0077b6';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--color-primary)';
+      }
+    });
+
     // AR Toggle Button
     document.getElementById('ar-toggle-btn').addEventListener('click', () => {
       this.appState.ar.start();

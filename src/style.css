@@ -1586,24 +1586,24 @@ html, body {
    ========================================================================== */
 #bottom-dashboard {
   position: absolute;
-  bottom: 15px;
+  bottom: 8px;
   left: 15px;
   right: 15px;
   z-index: 997;
   display: flex;
   flex-direction: column;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .bottom-nav {
-  height: 52px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  background: rgba(10, 15, 30, 0.45);
+  gap: 12px;
+  background: rgba(10, 15, 30, 0.65);
 }
 
 .bottom-nav-btn {
@@ -1612,13 +1612,13 @@ html, body {
   color: var(--color-text-secondary);
   font-family: var(--font-main);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
   transition: all 0.2s;
 }
 

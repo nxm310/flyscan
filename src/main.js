@@ -3,14 +3,14 @@
    ========================================================================== */
 
 import { AirspaceSimulator, AIRPORTS } from './simulation.js';
-import { Radar3DController } from './radar3d.js';
+import { MapController } from './map.js';
 import { ARController } from './ar.js';
 import { UIController } from './ui.js';
 
 // Global application state object
 const appState = {
   simulation: null,
-  radar3D: null,
+  map: null,
   ar: null,
   ui: null,
   selectedFlight: null,
@@ -44,13 +44,12 @@ async function startAppLoading() {
     updateProgress(35, "Génération de l'espace aérien en temps réel...");
     appState.simulation.initialize();
 
-    // Step 3: Initialize Three.js 3D Radar Space
+    // Step 3: Initialize 2D Live Radar Map
     await sleep(450);
-    updateProgress(60, "Chargement du dôme radar 3D WebGL...");
+    updateProgress(60, "Chargement de la carte radar 2D...");
     
-    // Create Three.js 3D Radar controller
-    appState.radar3D = new Radar3DController((flight) => {
-      // Click selection callback on 3D flights
+    // Create Leaflet 2D Radar controller
+    appState.map = new MapController((flight) => {
       if (flight) {
         appState.ui.selectFlight(flight);
       } else {
@@ -58,9 +57,8 @@ async function startAppLoading() {
       }
     });
     
-    // Initialize 3D renderer and camera orbit mechanics
-    appState.radar3D.appState = appState; // inject reference
-    appState.radar3D.init();
+    // Initialize 2D map
+    appState.map.init(46.8, 2.5, 6);
 
     // Step 4: Initialize Augmented Reality HUD
     await sleep(450);
@@ -74,8 +72,8 @@ async function startAppLoading() {
     appState.ui = new UIController(appState);
     appState.ui.init();
 
-    // Render initial flight vectors in 3D
-    appState.radar3D.update3DAirspace(
+    // Render initial flight vectors
+    appState.map.updateMarkers(
       appState.simulation.flights, 
       null, 
       appState.filterCategory
@@ -83,7 +81,7 @@ async function startAppLoading() {
 
     // Step 6: Finalize load and fade splash screen
     await sleep(650);
-    updateProgress(100, "Systèmes ADSB 3D synchronisés.");
+    updateProgress(100, "Systèmes ADSB synchronisés.");
     
     const splash = document.getElementById('splash-screen');
     splash.classList.add('fade-out');
@@ -109,8 +107,8 @@ function startSimulationLoops() {
     // Tick airspace physics
     appState.simulation.tick(dt);
     
-    // Update Three.js 3D positions, altitude vectors, and flight trails
-    appState.radar3D.update3DAirspace(
+    // Update 2D plane markers and trails
+    appState.map.updateMarkers(
       appState.simulation.flights, 
       appState.selectedFlight?.id, 
       appState.filterCategory

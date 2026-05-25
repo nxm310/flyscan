@@ -248,9 +248,36 @@ export class ARController {
     }
   }
 
+  async requestDeviceOrientationPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const permissionState = await DeviceOrientationEvent.requestPermission();
+        if (permissionState === 'granted') {
+          document.getElementById('ar-gyro-status').innerText = 'ACTIF';
+          document.getElementById('ar-gyro-status').classList.add('text-teal');
+          this.setupSensorListeners();
+          this.appState.ui.showToast("Capteurs gyroscopiques iOS activés !");
+        } else {
+          document.getElementById('ar-gyro-status').innerText = 'INACTIF';
+          document.getElementById('ar-gyro-status').classList.remove('text-teal');
+          this.appState.ui.showToast("Permission gyroscopique refusée.");
+        }
+      } catch (error) {
+        console.error("DeviceOrientation permission error", error);
+        this.appState.ui.showToast("Erreur d'activation des capteurs.");
+      }
+    } else {
+      // Non-iOS or standard device orientation support
+      this.setupSensorListeners();
+    }
+  }
+
   start() {
     this.isActive = true;
     document.getElementById('ar-overlay').classList.remove('hidden');
+    
+    // Request permission for iOS gyroscope / sensors
+    this.requestDeviceOrientationPermission();
     
     // Start camera stream
     this.startCamera();

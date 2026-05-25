@@ -31,7 +31,7 @@ export class UIController {
         
         const filter = btn.getAttribute('data-filter');
         this.appState.filterCategory = filter;
-        this.appState.radar3D.update3DAirspace(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
+        this.appState.map.updateMarkers(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
       });
     });
 
@@ -64,7 +64,7 @@ export class UIController {
     // Left Sidebar: Center Map on selected flight
     document.getElementById('det-focus-btn').addEventListener('click', () => {
       if (this.appState.selectedFlight) {
-        this.appState.radar3D.focusOnFlight(this.appState.selectedFlight);
+        this.appState.map.focusOnFlight(this.appState.selectedFlight);
       }
     });
 
@@ -104,7 +104,7 @@ export class UIController {
         // Focus 3D camera sweep on the selected airport coordinate
         const apData = AIRPORTS[airportCode];
         if (apData) {
-          this.appState.radar3D.focusOnAirport(apData);
+          this.appState.map.focusOnAirport(apData);
         }
       });
     });
@@ -133,7 +133,7 @@ export class UIController {
         const flight = this.appState.simulation.flights.find(f => f.id === activeAlert.flightId);
         if (flight) {
           this.selectFlight(flight);
-          this.appState.radar3D.focusOnFlight(flight);
+          this.appState.map.focusOnFlight(flight);
           document.getElementById('emergency-banner').classList.add('hidden');
         }
       }
@@ -190,8 +190,8 @@ export class UIController {
       sidebar.classList.remove('emg');
     }
 
-    // Update 3D markers highlighting
-    this.appState.radar3D.update3DAirspace(this.appState.simulation.flights, flight.id, this.appState.filterCategory);
+    // Update 2D markers highlighting
+    this.appState.map.updateMarkers(this.appState.simulation.flights, flight.id, this.appState.filterCategory);
 
     // Refresh details
     this.updateFlightDetailsPanel(flight);
@@ -200,7 +200,7 @@ export class UIController {
   deselectFlight() {
     this.appState.selectedFlight = null;
     document.getElementById('flight-details-sidebar').classList.add('closed');
-    this.appState.radar3D.update3DAirspace(this.appState.simulation.flights, null, this.appState.filterCategory);
+    this.appState.map.updateMarkers(this.appState.simulation.flights, null, this.appState.filterCategory);
   }
 
   updateFlightDetailsPanel(flight) {
@@ -340,7 +340,7 @@ export class UIController {
         const flight = this.appState.simulation.flights.find(f => f.id === alt.flightId);
         if (flight) {
           this.selectFlight(flight);
-          this.appState.radar3D.focusOnFlight(flight);
+          this.appState.map.focusOnFlight(flight);
         } else {
           this.showToast("Le vol a quitté le secteur radar.");
         }
@@ -425,7 +425,7 @@ export class UIController {
         `;
         row.addEventListener('click', () => {
           this.selectFlight(arr);
-          this.appState.radar3D.focusOnFlight(arr);
+          this.appState.map.focusOnFlight(arr);
         });
         arrListEl.appendChild(row);
       });
@@ -449,7 +449,7 @@ export class UIController {
         `;
         row.addEventListener('click', () => {
           this.selectFlight(dep);
-          this.appState.radar3D.focusOnFlight(dep);
+          this.appState.map.focusOnFlight(dep);
         });
         depListEl.appendChild(row);
       });
@@ -542,8 +542,8 @@ export class UIController {
         const log = logs.find(l => l.id === id);
         
         if (log) {
-          // In Three.js 3D space, we focus camera on the route location quadrant
-          this.appState.radar3D.focusOnAirport({
+          // Focus 2D map on the route location quadrant
+          this.appState.map.focusOnAirport({
             lat: log.routeHistory[0][0],
             lng: log.routeHistory[0][1]
           });
@@ -775,7 +775,7 @@ export class UIController {
           else t.classList.remove('active');
         });
 
-        this.appState.radar3D.focusOnAirport(ap);
+        this.appState.map.focusOnAirport(ap);
         resultsEl.classList.add('hidden');
         document.getElementById('search-input').value = '';
       });
@@ -801,7 +801,7 @@ export class UIController {
 
       div.addEventListener('click', () => {
         this.selectFlight(f);
-        this.appState.radar3D.focusOnFlight(f);
+        this.appState.map.focusOnFlight(f);
         resultsEl.classList.add('hidden');
         document.getElementById('search-input').value = '';
       });
@@ -824,20 +824,18 @@ export class UIController {
       (position) => {
         const { latitude, longitude } = position.coords;
         
-        // 1. Update 3D Radar Center coordinates
-        this.appState.radar3D.centerLat = latitude;
-        this.appState.radar3D.centerLng = longitude;
-        
-        // 2. Clear existing flights and regenerate flights around the user!
+        // 1. Clear existing flights and regenerate flights around the user
         this.appState.simulation.regenerateAirspaceAround(latitude, longitude);
         
-        // 3. Update the 3D rendering and reset the view centered on the user
-        this.appState.radar3D.update3DAirspace(
+        // 2. Center 2D Map on user position
+        this.appState.map.map.setView([latitude, longitude], 7);
+        
+        // 3. Update the 2D plane markers and trails
+        this.appState.map.updateMarkers(
           this.appState.simulation.flights, 
           null, 
           this.appState.filterCategory
         );
-        this.appState.radar3D.resetView();
         
         this.showToast("Espace aérien synchronisé autour de votre position !");
       },

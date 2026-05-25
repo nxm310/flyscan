@@ -30,6 +30,10 @@
       }
     </script>
 
+    <!-- Leaflet 2D Map Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Application CSS -->
     <link rel="stylesheet" href="./src/style.css" />
 
@@ -108,9 +112,9 @@
         </div>
       </header>
 
-      <!-- Three.js 3D Radar Space Area -->
+      <!-- 2D Live Radar Map Area -->
       <main id="map-container">
-        <div id="radar-3d-container"></div>
+        <div id="map"></div>
         <!-- Live Airspace Statistics Overlay -->
         <div class="map-stats-badge glass-panel">
           <div class="stat-item">

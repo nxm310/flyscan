@@ -251,6 +251,7 @@ export class AirspaceSimulator {
     this.alerts = [];
     this.activeSquawks = 0;
     this.totalFlightsCount = 65;
+    this.mode = 'live'; // 'live' or 'simulation'
   }
 
   initialize() {
@@ -473,6 +474,145 @@ export class AirspaceSimulator {
       this.flights.push(f);
     }
 
+    this.mode = 'simulation';
     this.updateStats();
+  }
+
+  async fetchLiveAirspace(lamin, lomin, lamax, lomax) {
+    const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
+    
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const data = await response.json();
+      if (!data || !data.states) {
+        return []; // No aircraft in bounding box
+      }
+      
+      // Map state vectors to Flight instances
+      const liveFlights = data.states.map((state, idx) => {
+        const icao = state[0];
+        const callsign = (state[1] || '').trim();
+        const country = state[2] || '';
+        const lng = state[5];
+        const lat = state[6];
+        const altitudeM = state[7];
+        const onGround = state[8];
+        const velocityMs = state[9] || 0;
+        const heading = state[10] || 0;
+        const verticalRateMs = state[11] || 0;
+        const squawk = state[14] || '';
+
+        // Map airline details by callsign
+        let airline = { code: 'FL', name: 'Vol Commercial', callsign: 'FLIGHT' };
+        let category = 'CIVIL';
+
+        const callsignPrefix3 = callsign.slice(0, 3);
+        if (callsignPrefix3 === 'AFR') { airline = { code: 'AF', name: 'Air France', callsign: 'AIRFRANS' }; }
+        else if (callsignPrefix3 === 'BAW') { airline = { code: 'BA', name: 'British Airways', callsign: 'SPEEDBIRD' }; }
+        else if (callsignPrefix3 === 'DLH') { airline = { code: 'LH', name: 'Lufthansa', callsign: 'LUFTHANSA' }; }
+        else if (callsignPrefix3 === 'UAE') { airline = { code: 'EK', name: 'Emirates', callsign: 'EMIRATES' }; }
+        else if (callsignPrefix3 === 'EZY') { airline = { code: 'EZ', name: 'EasyJet', callsign: 'EASY' }; }
+        else if (callsignPrefix3 === 'RYR') { airline = { code: 'FR', name: 'Ryanair', callsign: 'RYANAIR' }; }
+        else if (callsignPrefix3 === 'KLM') { airline = { code: 'KL', name: 'KLM', callsign: 'KLM' }; }
+        else if (callsignPrefix3 === 'QTR') { airline = { code: 'QR', name: 'Qatar Airways', callsign: 'QATARI' }; }
+        else if (callsignPrefix3 === 'SIA') { airline = { code: 'SQ', name: 'Singapore Airlines', callsign: 'SINGAPORE' }; }
+        else if (callsignPrefix3 === 'DAL') { airline = { code: 'DL', name: 'Delta Air Lines', callsign: 'DELTA' }; }
+        else if (callsign.startsWith('COTAM') || callsign.startsWith('FAF')) {
+          airline = { code: 'FAF', name: 'Armée de l\'Air Française', callsign: 'COTAM' };
+          category = 'MILITARY';
+        } else if (callsign.startsWith('REACH') || callsign.startsWith('USAF')) {
+          airline = { code: 'USAF', name: 'United States Air Force', callsign: 'REACH' };
+          category = 'MILITARY';
+        } else if (callsign.startsWith('RRR') || callsign.startsWith('ASC')) {
+          airline = { code: 'RAF', name: 'Royal Air Force', callsign: 'ASCOT' };
+          category = 'MILITARY';
+        }
+
+        // Random private category mapping
+        if (category === 'CIVIL' && (country.includes('Private') || (callsign.startsWith('N') && callsign.length < 6))) {
+          category = 'PRIVATE';
+          airline = { code: 'PVT', name: 'Jet Privé d\'Affaires', callsign: 'PRIVATE' };
+        }
+
+        // Create a live Flight object
+        const f = new Flight(icao, category);
+        f.airline = airline;
+        f.flightNumber = callsign || `ICAO-${icao.toUpperCase()}`;
+        f.lat = lat;
+        f.lng = lng;
+        f.altitude = altitudeM ? Math.round(altitudeM * 3.28084) : 10000;
+        f.speed = Math.round(velocityMs * 1.94384);
+        f.heading = heading;
+        f.verticalSpeed = Math.round(verticalRateMs * 196.85);
+        f.squawk = squawk || '2000';
+        
+        const isEmergency = squawk === '7700' || squawk === '7600' || squawk === '7500';
+        f.isEmergency = isEmergency;
+        if (isEmergency) {
+          f.emergencyType = squawk === '7700' ? 'SQUAWK 7700' : (squawk === '7600' ? 'SQUAWK 7600' : 'SQUAWK 7500');
+        }
+
+        // Generate realistic simulated origin and destinations for dashboard
+        if (heading >= 45 && heading < 135) {
+          f.origin = { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France' };
+          f.destination = { code: 'DXB', name: 'Dubai Intl', city: 'Dubaï', country: 'Émirats Arabes Unis' };
+        } else if (heading >= 135 && heading < 225) {
+          f.origin = { code: 'LHR', name: 'Heathrow', city: 'Londres', country: 'Royaume-Uni' };
+          f.destination = { code: 'FCO', name: 'Fiumicino', city: 'Rome', country: 'Italie' };
+        } else if (heading >= 225 && heading < 315) {
+          f.origin = { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France' };
+          f.destination = { code: 'JFK', name: 'John F. Kennedy', city: 'New York', country: 'États-Unis' };
+        } else {
+          f.origin = { code: 'MAD', name: 'Barajas', city: 'Madrid', country: 'Espagne' };
+          f.destination = { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France' };
+        }
+
+        // Reconstruct realistic path history trailing behind the plane
+        f.routeHistory = [];
+        const steps = 8;
+        const radHeading = (heading * Math.PI) / 180;
+        const speedKms = (f.speed * 1.852) / 3600; // km/sec
+        
+        // Generate historical coordinate points based on speed and heading vector backwards
+        for (let i = steps; i >= 0; i--) {
+          const dtSeconds = i * 120; // 120 second steps
+          const distKm = speedKms * dtSeconds;
+          
+          // Move opposite to heading vector to generate historical positions
+          const scaleFactor = 0.009; // degrees per km roughly
+          const hLat = lat - distKm * Math.cos(radHeading) * scaleFactor;
+          const hLng = lng - distKm * Math.sin(radHeading) * scaleFactor * (1 / Math.cos(lat * Math.PI / 180));
+          f.routeHistory.push([hLat, hLng]);
+        }
+
+        return f;
+      });
+
+      return liveFlights;
+    } catch (error) {
+      console.error("OpenSky live fetch error", error);
+      return null;
+    }
+  }
+
+  async fetchAndApplyLiveStates(lat = 46.8, lng = 2.5) {
+    // Determine bounding box around the active center
+    const radiusDeg = 3.5; // ~400km bounding box for France/Europe regional coverage
+    const lamin = lat - radiusDeg * 0.7;
+    const lomin = lng - radiusDeg * 1.1;
+    const lamax = lat + radiusDeg * 0.7;
+    const lomax = lng + radiusDeg * 1.1;
+    
+    const liveFlights = await this.fetchLiveAirspace(lamin, lomin, lamax, lomax);
+    
+    if (liveFlights && liveFlights.length > 0) {
+      this.flights = liveFlights;
+      this.mode = 'live';
+      this.updateStats();
+      return true;
+    }
+    return false;
   }
 }

@@ -39,10 +39,18 @@ async function startAppLoading() {
     updateProgress(15, "Instanciation du simulateur de vol...");
     appState.simulation = new AirspaceSimulator();
     
-    // Step 2: Initialize Airspace flight vectors
+    // Step 2: Initialize Airspace flight vectors (Try Live ADS-B first!)
     await sleep(450);
-    updateProgress(35, "Génération de l'espace aérien en temps réel...");
+    updateProgress(35, "Connexion au réseau ADS-B réel...");
     appState.simulation.initialize();
+    
+    // Attempt real live vector fetch
+    const liveSuccess = await appState.simulation.fetchAndApplyLiveStates();
+    if (liveSuccess) {
+      updateProgress(45, "Données ADS-B réelles synchronisées.");
+    } else {
+      updateProgress(45, "Serveur ADS-B saturé, activation du simulateur tactique.");
+    }
 
     // Step 3: Initialize 2D Live Radar Map
     await sleep(450);
@@ -81,7 +89,14 @@ async function startAppLoading() {
 
     // Step 6: Finalize load and fade splash screen
     await sleep(650);
-    updateProgress(100, "Systèmes ADSB synchronisés.");
+    const isLive = appState.simulation.mode === 'live';
+    updateProgress(100, isLive ? "Systèmes ADS-B réels connectés." : "Systèmes de simulation synchronisés.");
+    
+    const logoTag = document.querySelector('.logo-text .tag');
+    if (logoTag) {
+      logoTag.innerText = isLive ? "DIRECT ADS-B" : "SIMULATION ADS-B";
+      logoTag.style.color = isLive ? "var(--color-primary)" : "var(--color-secondary)";
+    }
     
     const splash = document.getElementById('splash-screen');
     splash.classList.add('fade-out');
@@ -94,7 +109,7 @@ async function startAppLoading() {
     
   } catch (err) {
     console.error("Flyradar initialization crash", err);
-    statusText.innerText = "CRITICAL ERROR: Échec de l'initialisation WebGL";
+    statusText.innerText = "CRITICAL ERROR: Échec de l'initialisation de la carte";
     statusText.style.color = "var(--color-emergency)";
   }
 }
@@ -138,6 +153,25 @@ function startSimulationLoops() {
     appState.ui.updateAirportStatsPanel();
 
   }, 1000);
+
+  // 4. Live ADS-B Network sync loop (every 12 seconds to respect OpenSky rate limits)
+  setInterval(async () => {
+    if (appState.simulation.mode === 'live') {
+      const center = appState.map.map.getCenter();
+      const liveSuccess = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
+      
+      const logoTag = document.querySelector('.logo-text .tag');
+      if (logoTag) {
+        if (liveSuccess) {
+          logoTag.innerText = "DIRECT ADS-B";
+          logoTag.style.color = "var(--color-primary)";
+        } else {
+          // Keep existing state, let it dead-reckon
+          console.warn("Live API rate limit or network warning, dead reckoning active");
+        }
+      }
+    }
+  }, 12000);
 
   // 2. Emergency occurrence rolling loop (every 15 seconds)
   // Has 18% chance to declare a new SQUAWK emergency, adding tension and animation

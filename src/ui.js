@@ -61,10 +61,14 @@ export class UIController {
       this.appState.ar.start();
     });
 
-    // Left Sidebar: Center Map on selected flight
+    // Left Sidebar: Center Map on selected flight — always fetch latest position
     document.getElementById('det-focus-btn').addEventListener('click', () => {
       if (this.appState.selectedFlight) {
-        this.appState.map.focusOnFlight(this.appState.selectedFlight);
+        // Get the latest live position of this flight
+        const latest = this.appState.simulation.flights.find(f => f.id === this.appState.selectedFlight.id)
+          || this.appState.selectedFlight;
+        this.appState.map.focusOnFlight(latest);
+        this.showToast(`📍 Carte centrée sur ${latest.flightNumber}`);
       }
     });
 
@@ -242,53 +246,59 @@ export class UIController {
   updateFlightDetailsPanel(flight) {
     if (!flight) return;
 
-    // Logo placeholder
-    document.getElementById('det-airline-logo').innerText = flight.airline.code;
+    // Airline logo / code
+    const airlineCode = flight.airline?.code || flight.flightNumber?.slice(0, 2) || '??';
+    document.getElementById('det-airline-logo').innerText = airlineCode;
     
-    // Core Names
-    document.getElementById('det-flight-number').innerText = flight.flightNumber;
-    document.getElementById('det-airline-name').innerText = flight.airline.name;
-    document.getElementById('det-flight-category').innerText = flight.category;
+    // Core identifiers
+    document.getElementById('det-flight-number').innerText = flight.flightNumber || flight.callsign || flight.icao24 || '???';
+    document.getElementById('det-airline-name').innerText = flight.airline?.name || 'Compagnie inconnue';
+    document.getElementById('det-flight-category').innerText = flight.category || 'CIVIL';
 
-    // Route
-    document.getElementById('det-origin-code').innerText = flight.origin.code;
-    document.getElementById('det-origin-name').innerText = AIRPORTS[flight.origin.code]?.name || 'Aéroport Régional';
-    document.getElementById('det-dest-code').innerText = flight.destination.code;
-    document.getElementById('det-dest-name').innerText = AIRPORTS[flight.destination.code]?.name || 'Aéroport Régional';
+    // Route — show what we know, otherwise show raw coords
+    const origCode = flight.origin?.code || '???';
+    const destCode = flight.destination?.code || '???';
+    document.getElementById('det-origin-code').innerText = origCode;
+    document.getElementById('det-origin-name').innerText = AIRPORTS[origCode]?.name || flight.origin?.name || 'Départ inconnu';
+    document.getElementById('det-dest-code').innerText = destCode;
+    document.getElementById('det-dest-name').innerText = AIRPORTS[destCode]?.name || flight.destination?.name || 'Destination inconnue';
 
-    // Route slider bar progress
-    const progressPercent = Math.round(flight.progress * 100);
-    document.getElementById('det-route-progress-bar').style.left = `${progressPercent}%`;
+    // Route progress bar (use 50% as default for live flights without route data)
+    const progressPercent = Math.round((flight.progress || 0.5) * 100);
+    const progBar = document.getElementById('det-route-progress-bar');
+    if (progBar) progBar.style.left = `${Math.min(95, progressPercent)}%`;
     document.getElementById('det-progress-percent').innerText = `${progressPercent}%`;
 
-    // Departure/Arrival Mock Schedules
-    const depTime = flight.origin.code === 'CDG' ? 'En direct' : '10:45';
-    const arrTime = flight.destination.code === 'CDG' ? 'Imminent' : '14:20';
-    document.getElementById('det-departure-time').innerText = depTime;
-    document.getElementById('det-arrival-time').innerText = arrTime;
+    // Times (live data only shows current timestamp)
+    const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('det-departure-time').innerText = flight.isLive ? '—' : '10:45';
+    document.getElementById('det-arrival-time').innerText = flight.isLive ? now : '14:20';
 
-    // Telemetry Teletext
-    document.getElementById('det-altitude').innerText = `${Math.round(flight.altitude).toLocaleString()} ft`;
+    // --- ALTITUDE (primary: meters, secondary: feet) ---
+    const altM = flight.altitudeM ?? Math.round((flight.altitude || 0) * 0.3048);
+    const altFt = flight.altitude ?? Math.round((flight.altitudeM || 0) * 3.28084);
+    document.getElementById('det-altitude').innerText = `${altM.toLocaleString()} m`;
     
-    const vRate = Math.round(flight.verticalSpeed);
+    const vRate = Math.round(flight.verticalSpeed || 0);
     const vRateEl = document.getElementById('det-vertical-rate');
     if (vRate > 150) {
-      vRateEl.innerText = `↑ +${vRate} ft/min`;
+      vRateEl.innerText = `↑ +${vRate} ft/min (${Math.round(vRate * 0.00508)} m/s)`;
       vRateEl.className = 'sub-val text-teal';
     } else if (vRate < -150) {
-      vRateEl.innerText = `↓ ${vRate} ft/min`;
+      vRateEl.innerText = `↓ ${vRate} ft/min (${Math.round(vRate * 0.00508)} m/s)`;
       vRateEl.className = 'sub-val emergency-text';
     } else {
-      vRateEl.innerText = `→ Croisière`;
+      vRateEl.innerText = `→ ${altFt.toLocaleString()} ft / Croisière`;
       vRateEl.className = 'sub-val';
     }
 
-    document.getElementById('det-speed').innerText = `${Math.round(flight.speed)} kts`;
-    document.getElementById('det-speed-kmh').innerText = `${Math.round(flight.speed * 1.852)} km/h`;
+    // Speed
+    document.getElementById('det-speed').innerText = `${Math.round(flight.speed || 0)} kts`;
+    document.getElementById('det-speed-kmh').innerText = `${Math.round((flight.speed || 0) * 1.852)} km/h`;
 
-    const heading = Math.round(flight.heading);
+    // Heading
+    const heading = Math.round(flight.heading || 0);
     document.getElementById('det-heading').innerText = `${heading}°`;
-    
     let headingText = 'Nord';
     if (heading >= 22.5 && heading < 67.5) headingText = 'Nord-Est';
     else if (heading >= 67.5 && heading < 112.5) headingText = 'Est';
@@ -299,22 +309,44 @@ export class UIController {
     else if (heading >= 292.5 && heading < 337.5) headingText = 'Nord-Ouest';
     document.getElementById('det-heading-text').innerText = headingText;
 
-    document.getElementById('det-squawk').innerText = flight.squawk;
-    
+    // Squawk
+    document.getElementById('det-squawk').innerText = flight.squawk || '????';
     const squawkStatusEl = document.getElementById('det-squawk-status');
     if (flight.isEmergency) {
-      squawkStatusEl.innerText = flight.emergencyType;
+      squawkStatusEl.innerText = flight.emergencyType || 'URGENCE';
       squawkStatusEl.className = 'sub-val emergency-text';
     } else {
       squawkStatusEl.innerText = 'Normal / Actif';
       squawkStatusEl.className = 'sub-val text-teal';
     }
 
-    // Metadata
-    document.getElementById('det-aircraft-model').innerText = flight.aircraftModel;
-    document.getElementById('det-aircraft-reg').innerText = flight.registration;
-    document.getElementById('det-aircraft-country').innerText = flight.category === 'MILITARY' ? 'Tactique OTAN' : 'France / Europe';
-    document.getElementById('det-coordinates').innerText = `${flight.lat.toFixed(4)}, ${flight.lng.toFixed(4)}`;
+    // Metadata — show ALL available ADS-B fields
+    document.getElementById('det-aircraft-model').innerText = flight.aircraftModel || flight.t || 'Type inconnu';
+    document.getElementById('det-aircraft-reg').innerText = flight.registration || flight.r || 'N/A';
+    document.getElementById('det-coordinates').innerText = `${(flight.lat || 0).toFixed(5)}, ${(flight.lng || 0).toFixed(5)}`;
+
+    // Extended ADS-B info block
+    const extEl = document.getElementById('det-extended-info');
+    if (extEl) {
+      const rows = [
+        ['Code ICAO 24', (flight.icao24 || flight.id || '').toUpperCase()],
+        ['Pays', flight.country || flight.airline?.country || '—'],
+        ['Opérateur / Armateur', flight.ownerOp || flight.airline?.name || '—'],
+        ['Année de construction', flight.year || '—'],
+        ['Description type', flight.desc || flight.aircraftModel || '—'],
+        ['Statut', flight.onGround ? '🛑 Au sol' : `✈️ En vol — ${altM.toLocaleString()} m`],
+        ['Source', flight.isLive ? '📡 ADS-B Temps Réel' : '🔵 Simulation'],
+        ...(flight.rssi !== null && flight.rssi !== undefined ? [['Signal RSSI', `${flight.rssi} dBFS`]] : []),
+        ...(flight.messages ? [['Messages reçus', flight.messages.toLocaleString()]] : []),
+      ];
+
+      extEl.innerHTML = rows.map(([label, val]) =>
+        `<div class="meta-row">
+          <span class="lbl">${label}</span>
+          <span class="val">${val}</span>
+        </div>`
+      ).join('');
+    }
   }
 
   // --- Right Sidebars Navigation (Alerts / Airports) ---

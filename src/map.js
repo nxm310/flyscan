@@ -133,18 +133,13 @@ export class MapController {
     const altFt = flight.altitude ? Math.round(flight.altitude) : 0;
     const speed = flight.speed ? Math.round(flight.speed) : 0;
     
-    // Custom DivIcon allowing rotation and pulse effects, PLUS a floating data label
+    // Custom DivIcon allowing rotation and pulse effects
     const htmlContent = `
       <div class="plane-marker-icon-wrapper" style="transform: rotate(${heading}deg);">
         <div class="plane-marker-pulse ${categoryClass}"></div>
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="${this.planeSvgPath}"/>
         </svg>
-      </div>
-      <div class="plane-marker-label ${categoryClass} ${selectedClass}">
-        <div class="lbl-id">${labelId}</div>
-        <div class="lbl-alt">${altFt}ft</div>
-        <div class="lbl-spd">${speed}kt</div>
       </div>
     `;
 

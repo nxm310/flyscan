@@ -77,14 +77,22 @@ async function startAppLoading() {
     // Listen to manual map drags/pans to instantly load live flights for the newly positioned area!
     let moveTimeout = null;
     appState.map.map.on('moveend', () => {
-      if (appState.simulation.mode !== 'live') return;
-      
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const center = appState.map.map.getCenter();
+        appState.ui.showToast("📡 Synchro ADS-B...");
+        
         const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
         if (result.success) {
-          appState.ui.showToast(`🛰️ Radar calé sur ce secteur : ${result.count} vols.`);
+          // Force update markers immediately so they appear instantly!
+          appState.map.updateMarkers(
+            appState.simulation.flights, 
+            appState.selectedFlight?.id, 
+            appState.filterCategory
+          );
+          appState.ui.showToast(`🛰️ Radar calé : ${result.count} vols en direct.`);
+        } else {
+          appState.ui.showToast("⚠️ Zone sans couverture ADS-B ou échec API.");
         }
       }, 800); // 800ms debounce to prevent API spam while dragging
     });

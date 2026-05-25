@@ -214,8 +214,8 @@ export class MapController {
       }
     });
 
-    // Remove any markers that are no longer active
-    for (const [id, marker] of this.markers.entries()) {
+    // Remove any markers that are no longer active (safely using Array.from to avoid iterator modification bugs)
+    for (const [id, marker] of Array.from(this.markers.entries())) {
       if (!activeIds.has(id)) {
         this.map.removeLayer(marker);
         this.markers.delete(id);

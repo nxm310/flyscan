@@ -2535,6 +2535,22 @@ html, body {
   .ar-btn span {
     font-size: 0.65rem;
   }
+
+  .map-stats-badge {
+    bottom: auto !important;
+    left: auto !important;
+    top: 185px;
+    right: 10px;
+    padding: 6px 12px;
+    gap: 8px;
+    border-radius: 8px;
+    z-index: 995;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body.has-collapsed-header .map-stats-badge {
+    top: 70px;
+  }
 }
 
 /* ==========================================================================
@@ -2569,7 +2585,7 @@ body.light-mode .airport-tooltip {
 .altitude-legend {
   position: absolute;
   bottom: 25px;
-  left: 20px;
+  right: 25px;
   z-index: 998;
   padding: 10px 14px;
   border-radius: 10px;

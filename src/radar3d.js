@@ -2,8 +2,8 @@
    FLYRADAR — THREE.JS 3D TACTICAL RADAR VISUALIZATION
    ========================================================================== */
 
-const THREE = window.THREE;
 import { getDistance } from './simulation.js';
+const THREE = window.THREE;
 
 export class Radar3DController {
   constructor(onFlightSelectedCallback) {

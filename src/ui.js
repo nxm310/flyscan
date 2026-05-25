@@ -338,9 +338,9 @@ export class UIController {
       vRateEl.className = 'sub-val';
     }
 
-    // Speed
-    document.getElementById('det-speed').innerText = `${Math.round(flight.speed || 0)} kts`;
-    document.getElementById('det-speed-kmh').innerText = `${Math.round((flight.speed || 0) * 1.852)} km/h`;
+    // Speed (KM/H primary, Knots secondary)
+    document.getElementById('det-speed').innerText = `${Math.round((flight.speed || 0) * 1.852)} km/h`;
+    document.getElementById('det-speed-kmh').innerText = `${Math.round(flight.speed || 0)} kts`;
 
     // Heading
     const heading = Math.round(flight.heading || 0);

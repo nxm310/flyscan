@@ -42,6 +42,9 @@ export class Radar3DController {
 
     // Anim sweep line
     this.sweepBeam = null;
+    
+    // Dynamic lookAt camera target
+    this.cameraTarget = new THREE.Vector3(0, -2, 0);
   }
 
   init() {
@@ -89,11 +92,11 @@ export class Radar3DController {
   }
 
   updateCameraPosition() {
-    // Spherical to Cartesian coordinates mapping
-    this.camera.position.x = this.distance * Math.sin(this.phi) * Math.sin(this.theta);
-    this.camera.position.y = this.distance * Math.cos(this.phi);
-    this.camera.position.z = this.distance * Math.sin(this.phi) * Math.cos(this.theta);
-    this.camera.lookAt(0, -2, 0);
+    // Spherical to Cartesian coordinates mapping relative to cameraTarget
+    this.camera.position.x = this.cameraTarget.x + this.distance * Math.sin(this.phi) * Math.sin(this.theta);
+    this.camera.position.y = this.cameraTarget.y + this.distance * Math.cos(this.phi);
+    this.camera.position.z = this.cameraTarget.z + this.distance * Math.sin(this.phi) * Math.cos(this.theta);
+    this.camera.lookAt(this.cameraTarget);
   }
 
   // Conversions geographic coordinates -> 3D cartesian units
@@ -570,12 +573,12 @@ export class Radar3DController {
   focusOnFlight(flight) {
     if (!flight) return;
     
-    // Rotate viewport camera theta smoothly to target plane azimuth
+    // Rotate viewport camera smoothly to target plane azimuth
     const pos3D = this.latLngAltToVector3(flight.lat, flight.lng, flight.altitude);
-    const targetTheta = Math.atan2(pos3D.x, pos3D.z);
+    const targetTheta = Math.atan2(pos3D.x, pos3D.z) - Math.PI / 4;
     
-    // Animate camera orbital sweeps smoothly
-    this.animateTransition(targetTheta, Math.PI / 4, 30);
+    // Animate camera orbital sweeps smoothly and center target lookAt
+    this.animateTransition(targetTheta, Math.PI / 4, 25, pos3D);
   }
 
   focusOnAirport(airport) {
@@ -583,19 +586,26 @@ export class Radar3DController {
     
     // Convert airport coords to ground 3D offsets
     const pos3D = this.latLngAltToVector3(airport.lat, airport.lng, 0);
-    const targetTheta = Math.atan2(pos3D.x, pos3D.z);
+    const targetTheta = Math.atan2(pos3D.x, pos3D.z) - Math.PI / 4;
     
-    this.animateTransition(targetTheta, Math.PI / 3.2, 45);
+    this.animateTransition(targetTheta, Math.PI / 3.2, 40, pos3D);
   }
 
-  animateTransition(targetTheta, targetPhi, targetDist) {
-    // Smooth interpolations over 35 ticks
+  resetView() {
+    this.animateTransition(-Math.PI / 4, Math.PI / 3, 55, new THREE.Vector3(0, -2, 0));
+  }
+
+  animateTransition(targetTheta, targetPhi, targetDist, targetLookAt = null) {
+    // Smooth interpolations over 30 ticks
     const steps = 30;
     let currentStep = 0;
 
     const startTheta = this.theta;
     const startPhi = this.phi;
     const startDist = this.distance;
+    
+    const startLookAt = this.cameraTarget.clone();
+    const finalLookAt = targetLookAt || new THREE.Vector3(0, -2, 0);
 
     // Handle 360 wrap
     let diffTheta = targetTheta - startTheta;
@@ -613,6 +623,9 @@ export class Radar3DController {
       this.theta = startTheta + diffTheta * ease;
       this.phi = startPhi + (targetPhi - startPhi) * ease;
       this.distance = startDist + (targetDist - startDist) * ease;
+      
+      // Smooth linear interpolation of camera target vector
+      this.cameraTarget.lerpVectors(startLookAt, finalLookAt, ease);
       
       this.updateCameraPosition();
       

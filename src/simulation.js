@@ -425,4 +425,54 @@ export class AirspaceSimulator {
     
     return alertItem;
   }
+
+  regenerateAirspaceAround(lat, lng) {
+    // 1. Create a set of localized virtual hubs around the user's location
+    const radius = 2.5; // ~280km bounding box
+    
+    this.userHubs = [
+      { code: 'LOC', lat: lat, lng: lng }, // Center (user location)
+      { code: 'HUB1', lat: lat + radius * 0.6, lng: lng + radius * 0.8 },
+      { code: 'HUB2', lat: lat - radius * 0.7, lng: lng - radius * 0.5 },
+      { code: 'HUB3', lat: lat + radius * 0.5, lng: lng - radius * 0.7 },
+      { code: 'HUB4', lat: lat - radius * 0.8, lng: lng + radius * 0.6 }
+    ];
+
+    // Clear existing flights and alerts
+    this.flights = [];
+    this.alerts = [];
+    this.activeSquawks = 0;
+
+    // Generate new flights orbiting this local workspace
+    for (let i = 0; i < this.totalFlightsCount; i++) {
+      let category = 'CIVIL';
+      const roll = Math.random();
+      if (roll < 0.12) {
+        category = 'MILITARY';
+      } else if (roll < 0.25) {
+        category = 'PRIVATE';
+      }
+
+      const f = new Flight(`FL-${1000 + i}`, category);
+      
+      // Override hubs with geolocated positions
+      let orgIdx = Math.floor(Math.random() * this.userHubs.length);
+      let destIdx = Math.floor(Math.random() * this.userHubs.length);
+      while (orgIdx === destIdx) {
+        destIdx = Math.floor(Math.random() * this.userHubs.length);
+      }
+      
+      f.origin = this.userHubs[orgIdx];
+      f.destination = this.userHubs[destIdx];
+      f.totalDistance = getDistance(f.origin.lat, f.origin.lng, f.destination.lat, f.destination.lng);
+      f.progress = Math.random() * 0.9;
+      f.updatePositionAndTelemetry();
+      f.routeHistory = [];
+      f.prepopulateHistory();
+      
+      this.flights.push(f);
+    }
+
+    this.updateStats();
+  }
 }

@@ -162,6 +162,14 @@ export class UIController {
     document.getElementById('ar-instructions-close-btn').addEventListener('click', () => {
       document.getElementById('ar-instructions-modal').classList.add('hidden');
     });
+
+    // Geolocation click
+    const geolocateBtn = document.getElementById('geolocate-btn');
+    if (geolocateBtn) {
+      geolocateBtn.addEventListener('click', () => {
+        this.handleGeolocation();
+      });
+    }
   }
 
   // --- Flight Selection & Sidbar UI ---
@@ -711,23 +719,72 @@ export class UIController {
     const normQuery = query.toLowerCase().trim();
     const flights = this.appState.simulation.flights;
 
-    // Search matches
-    const matches = flights.filter(f => {
+    // 1. Search for matching airports
+    const matchedAirports = Object.values(AIRPORTS).filter(ap => {
+      return ap.code.toLowerCase().includes(normQuery) ||
+             ap.name.toLowerCase().includes(normQuery) ||
+             ap.city.toLowerCase().includes(normQuery) ||
+             ap.country.toLowerCase().includes(normQuery);
+    });
+
+    // 2. Search for flights (including expanded airport checks)
+    const matchedFlights = flights.filter(f => {
+      const origAp = AIRPORTS[f.origin.code];
+      const destAp = AIRPORTS[f.destination.code];
+      
       return f.flightNumber.toLowerCase().includes(normQuery) ||
              f.airline.name.toLowerCase().includes(normQuery) ||
              f.aircraftModel.toLowerCase().includes(normQuery) ||
              f.origin.code.toLowerCase().includes(normQuery) ||
-             f.destination.code.toLowerCase().includes(normQuery);
+             f.destination.code.toLowerCase().includes(normQuery) ||
+             (origAp && (origAp.name.toLowerCase().includes(normQuery) || origAp.city.toLowerCase().includes(normQuery))) ||
+             (destAp && (destAp.name.toLowerCase().includes(normQuery) || destAp.city.toLowerCase().includes(normQuery)));
     });
 
     resultsEl.classList.remove('hidden');
 
-    if (matches.length === 0) {
-      resultsEl.innerHTML = '<div class="search-no-results">Aucun vol ne correspond dans le secteur.</div>';
+    if (matchedAirports.length === 0 && matchedFlights.length === 0) {
+      resultsEl.innerHTML = '<div class="search-no-results">Aucun résultat ne correspond dans le secteur.</div>';
       return;
     }
 
-    matches.slice(0, 5).forEach(f => {
+    // Render airports matching the query
+    matchedAirports.slice(0, 3).forEach(ap => {
+      const div = document.createElement('div');
+      div.className = 'search-item';
+      
+      div.innerHTML = `
+        <div class="search-item-left">
+          <span class="search-item-title" style="color: var(--color-secondary)"><i data-lucide="building-2" style="width:12px;height:12px;display:inline-block;margin-right:5px"></i>${ap.name} (${ap.code})</span>
+          <span class="search-item-sub">${ap.city}, ${ap.country} — Index retard: ${ap.delayIndex}</span>
+        </div>
+        <span class="search-item-badge" style="color: var(--color-secondary); border-color: rgba(79, 172, 254, 0.2)">AÉROPORT</span>
+      `;
+
+      div.addEventListener('click', () => {
+        this.currentAirportCode = ap.code;
+        this.updateAirportStatsPanel();
+        
+        // Active airports panel right sidebar
+        this.toggleRightSidebar('airports');
+        
+        // Highlight active airport tab button in sidebar
+        const tabs = document.querySelectorAll('.airport-tab-btn');
+        tabs.forEach(t => {
+          if (t.getAttribute('data-airport') === ap.code) t.classList.add('active');
+          else t.classList.remove('active');
+        });
+
+        this.appState.radar3D.focusOnAirport(ap);
+        resultsEl.classList.add('hidden');
+        document.getElementById('search-input').value = '';
+      });
+
+      resultsEl.appendChild(div);
+    });
+
+    // Render flights matching the query
+    matchedFlights.slice(0, 5).forEach(f => {
       const div = document.createElement('div');
       div.className = 'search-item';
       
@@ -751,5 +808,44 @@ export class UIController {
 
       resultsEl.appendChild(div);
     });
+
+    lucide.createIcons();
+  }
+
+  handleGeolocation() {
+    if (!navigator.geolocation) {
+      this.showToast("La géolocalisation n'est pas supportée par votre navigateur.");
+      return;
+    }
+
+    this.showToast("Accès GPS en cours...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // 1. Update 3D Radar Center coordinates
+        this.appState.radar3D.centerLat = latitude;
+        this.appState.radar3D.centerLng = longitude;
+        
+        // 2. Clear existing flights and regenerate flights around the user!
+        this.appState.simulation.regenerateAirspaceAround(latitude, longitude);
+        
+        // 3. Update the 3D rendering and reset the view centered on the user
+        this.appState.radar3D.update3DAirspace(
+          this.appState.simulation.flights, 
+          null, 
+          this.appState.filterCategory
+        );
+        this.appState.radar3D.resetView();
+        
+        this.showToast("Espace aérien synchronisé autour de votre position !");
+      },
+      (error) => {
+        console.error("Geolocation error", error);
+        this.showToast("Impossible d'obtenir votre position. Utilisation de la position par défaut (Paris).");
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
   }
 }

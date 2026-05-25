@@ -1,6 +1,7 @@
 /* ==========================================================================
    FLYRADAR — MAP CONTROLLER MODULE
    ========================================================================== */
+import { AIRPORTS } from './simulation.js';
 
 export class MapController {
   constructor(onFlightSelectedCallback) {
@@ -27,8 +28,11 @@ export class MapController {
       position: 'topright'
     }).addTo(this.map);
 
-    // Dark Matter tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Dark Matter tile layer by default
+    this.tileLayerUrlDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    this.tileLayerUrlLight = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    
+    this.tileLayer = L.tileLayer(this.tileLayerUrlDark, {
       maxZoom: 20
     }).addTo(this.map);
 
@@ -52,6 +56,46 @@ export class MapController {
         this.onFlightSelected(null);
       }
     });
+
+    // Draw Airports
+    this.drawAirports();
+  }
+
+  drawAirports() {
+    this.airportMarkers = new Map();
+    
+    Object.values(AIRPORTS).forEach(ap => {
+      // Create a small circle marker for each airport
+      const marker = L.circleMarker([ap.lat, ap.lng], {
+        radius: 5,
+        color: 'var(--color-primary)',
+        fillColor: '#000',
+        fillOpacity: 1,
+        weight: 2,
+        className: 'airport-marker'
+      }).addTo(this.map);
+
+      // Add a tooltip that appears on hover
+      marker.bindTooltip(`<b>${ap.code}</b><br>${ap.name}`, {
+        direction: 'top',
+        className: 'airport-tooltip'
+      });
+
+      // Clicking an airport centers map and can trigger the airport sidebar
+      marker.on('click', () => {
+        this.map.setView([ap.lat, ap.lng], 10);
+        // Dispatch custom event to tell UI controller to open airport sidebar
+        document.dispatchEvent(new CustomEvent('airportSelected', { detail: ap.code }));
+      });
+
+      this.airportMarkers.set(ap.code, marker);
+    });
+  }
+
+  switchTheme(isLightMode) {
+    if (this.tileLayer) {
+      this.tileLayer.setUrl(isLightMode ? this.tileLayerUrlLight : this.tileLayerUrlDark);
+    }
   }
 
   createPlaneIcon(flight, isSelected) {

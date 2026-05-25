@@ -2481,3 +2481,31 @@ html, body {
     font-size: 0.65rem;
   }
 }
+
+/* ==========================================================================
+   Map Layers (Airports, Tooltips)
+   ========================================================================== */
+.airport-marker {
+  cursor: pointer;
+  transition: r 0.2s ease, fill-opacity 0.2s ease;
+}
+
+.airport-marker:hover {
+  fill-opacity: 0.8 !important;
+}
+
+.airport-tooltip {
+  background: var(--color-bg-panel);
+  color: var(--color-text-primary);
+  border: var(--border-neon);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  font-family: var(--font-main);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+body.light-mode .airport-tooltip {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: rgba(0, 119, 182, 0.3);
+}

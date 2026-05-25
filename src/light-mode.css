@@ -1,0 +1,80 @@
+/* ==========================================================================
+   FLYRADAR — LIGHT MODE EXTENSION
+   ========================================================================== */
+
+/* Light Mode Variables override */
+body.light-mode {
+  --color-bg-space: #f0f4f8;
+  --color-bg-panel: rgba(255, 255, 255, 0.85);
+  --color-bg-panel-solid: #ffffff;
+  
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  
+  --border-light: 1px solid rgba(0, 0, 0, 0.08);
+  --border-neon: 1px solid rgba(0, 150, 255, 0.3);
+  
+  /* Primary color adaptation for light mode */
+  --color-primary: #0077b6;
+  --color-primary-glow: rgba(0, 119, 182, 0.15);
+  --color-secondary: #0096c7;
+  
+  --color-accent-military: #008f39;
+  --color-accent-private: #7b2cbf;
+  --color-warning: #d97706;
+  --color-emergency: #e11d48;
+}
+
+/* Specific elements adjustments in light mode */
+body.light-mode .glass-panel {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .sidebar,
+body.light-mode .header {
+  background: var(--color-bg-panel);
+}
+
+body.light-mode .stat-value {
+  color: var(--color-primary);
+  text-shadow: none;
+}
+
+body.light-mode .live-badge {
+  color: var(--color-emergency);
+  text-shadow: none;
+}
+
+body.light-mode .flight-marker-label {
+  color: #1e293b;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8), 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Light mode specific hover and button states */
+body.light-mode .filter-btn {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .filter-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .filter-btn.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+body.light-mode .theme-toggle-btn {
+  color: var(--color-primary);
+  background: rgba(0, 119, 182, 0.1);
+}
+
+body.light-mode .theme-toggle-btn:hover {
+  background: rgba(0, 119, 182, 0.2);
+}
+
+/* Map tiles adjustment for light mode */
+body.light-mode .leaflet-container {
+  background: #e5e5e5;
+}

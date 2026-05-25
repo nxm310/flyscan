@@ -57,9 +57,34 @@ export class UIController {
       }
     });
 
+    // Theme Toggle Button
+    let isLightMode = false;
+    document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+      isLightMode = !isLightMode;
+      document.body.classList.toggle('light-mode', isLightMode);
+      
+      const iconEl = document.querySelector('#theme-toggle-btn i');
+      if (isLightMode) {
+        iconEl.setAttribute('data-lucide', 'moon');
+      } else {
+        iconEl.setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
+      
+      // Update map tiles
+      this.appState.map.switchTheme(isLightMode);
+    });
+
     // AR Toggle Button
     document.getElementById('ar-toggle-btn').addEventListener('click', () => {
       this.appState.ar.start();
+    });
+
+    // Listen to Airport clicks on the map
+    document.addEventListener('airportSelected', (e) => {
+      const code = e.detail;
+      this.currentAirportCode = code;
+      this.toggleRightSidebar('airports');
     });
 
     // Left Sidebar: Center Map on selected flight — always fetch latest position

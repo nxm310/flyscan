@@ -147,18 +147,21 @@ export class ARController {
         if (!this.isActive) return;
         
         // On iOS, permission for DeviceOrientation is requested in UI interaction
-        // If orientation is working, utilize it:
+        // Check for WebKit compass heading (iOS Safari exclusive for real magnetic North)
+        let heading = null;
+        if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+          heading = event.webkitCompassHeading;
+        } else if (event.alpha !== null) {
+          // Android/Standard: 360 - alpha maps it to compass clockwise heading
+          heading = (360 - event.alpha) % 360;
+        }
         
-        // alpha: rotation around z-axis (0-360, compass heading)
-        // beta: front-back tilt (-180 to 180)
-        // gamma: left-right tilt (-90 to 90)
-        
-        if (event.alpha !== null) {
+        if (heading !== null) {
           document.getElementById('ar-gyro-status').innerText = 'ACTIF';
           document.getElementById('ar-gyro-status').classList.add('text-teal');
           
-          // Determine yaw from alpha (compensating calibration)
-          this.yaw = (360 - event.alpha + this.yawOffset + 360) % 360;
+          // Determine yaw from heading (compensating calibration offset)
+          this.yaw = (heading + this.yawOffset + 360) % 360;
           
           // Determine pitch from beta tilt
           // Standard vertical elevation: when holding phone upright beta is around 70-90
@@ -170,9 +173,11 @@ export class ARController {
 
   calibrateHeading() {
     // Calibrate virtual compass offset based on active selected flight or default north
+    const userPos = this.appState.userPos || { lat: 48.86, lng: 2.35 };
+    const uLat = userPos.lat;
+    const uLng = userPos.lng;
+
     if (this.appState.selectedFlight) {
-      const uLat = 48.86; // Simulated user coordinates (ParisCDG center)
-      const uLng = 2.35;
       const f = this.appState.selectedFlight;
       const fBearing = getBearing(uLat, uLng, f.lat, f.lng);
       
@@ -514,9 +519,10 @@ export class ARController {
     const w = this.canvas.width;
     const h = this.canvas.height;
     
-    // Observer coordinates (Simulated center around CDG)
-    const uLat = 48.86;
-    const uLng = 2.35;
+    // Observer coordinates (Simulated center around CDG, or real GPS location)
+    const userPos = this.appState.userPos || { lat: 48.86, lng: 2.35 };
+    const uLat = userPos.lat;
+    const uLng = userPos.lng;
     
     let targetsVisible = 0;
     

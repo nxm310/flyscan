@@ -15,7 +15,8 @@ const appState = {
   ui: null,
   selectedFlight: null,
   filterCategory: 'all',
-  soundMuted: false
+  soundMuted: false,
+  userPos: null
 };
 
 // Safe Lucide initializer — waits until the library is loaded (it uses defer)

@@ -670,19 +670,19 @@ export class AirspaceSimulator {
   // Main public method: fetch live data
   // ──────────────────────────────────────────────
   async fetchAndApplyLiveStates(lat = 48.85, lng = 2.35) {
-    // 1. Try airplanes.live FIRST (Native CORS, 1000+ results in 350nm)
-    let liveFlights = await this._fetchAirplanesLive(lat, lng, 350);
+    // 1. Try airplanes.live FIRST (Native CORS, only 150 km around position)
+    let liveFlights = await this._fetchAirplanesLive(lat, lng, 81);
     let source = 'airplanes.live';
     
     if (!liveFlights || liveFlights.length < 10) {
       // 2. Fallback to adsb.fi via CORS proxy
-      liveFlights = await this._fetchAdsbFiProxy(lat, lng, 350);
+      liveFlights = await this._fetchAdsbFiProxy(lat, lng, 81);
       source = 'adsb.fi(proxy)';
     }
     
     if (!liveFlights || liveFlights.length < 10) {
-      // 3. Last resort: OpenSky with wide bounding box
-      liveFlights = await this._fetchOpenSky(lat, lng, 5.0);
+      // 3. Last resort: OpenSky with bounding box restricted to 150 km (1.35 degrees)
+      liveFlights = await this._fetchOpenSky(lat, lng, 1.35);
       source = 'opensky';
     }
     

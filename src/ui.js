@@ -1011,6 +1011,7 @@ export class UIController {
         if (geoBtn) geoBtn.classList.remove('loading');
 
         // 1. Place a "you are here" marker on the map
+        this.appState.userPos = { lat: latitude, lng: longitude };
         this.appState.map.setUserLocationMarker(latitude, longitude);
 
         // 2. Center 2D Map on user position

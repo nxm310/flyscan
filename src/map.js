@@ -171,16 +171,38 @@ export class MapController {
 
       activeIds.add(f.id);
       const isSelected = f.id === selectedFlightId;
-      const icon = this.createPlaneIcon(f, isSelected);
+      const altFt = f.altitude ? Math.round(f.altitude) : 0;
 
       if (this.markers.has(f.id)) {
         // Update existing marker
         const marker = this.markers.get(f.id);
-        marker.setLatLng([f.lat, f.lng]);
-        marker.setIcon(icon);
+        
+        // Optimization: Cache visual properties to avoid expensive setIcon DOM operations
+        const altColor = this.getAltitudeColor(altFt);
+        const headingRound = Math.round(f.heading);
+        const cacheKey = `${headingRound}_${altColor}_${isSelected}`;
+
+        // Update coordinates only if changed
+        const currentLatLng = marker.getLatLng();
+        if (currentLatLng.lat !== f.lat || currentLatLng.lng !== f.lng) {
+          marker.setLatLng([f.lat, f.lng]);
+        }
+
+        // Only rebuild DOM elements when visual state strictly changed
+        if (marker._renderCacheKey !== cacheKey) {
+          const icon = this.createPlaneIcon(f, isSelected);
+          marker.setIcon(icon);
+          marker._renderCacheKey = cacheKey;
+        }
       } else {
         // Create new marker
+        const icon = this.createPlaneIcon(f, isSelected);
         const marker = L.marker([f.lat, f.lng], { icon: icon }).addTo(this.map);
+        
+        // Initialize cache
+        const altColor = this.getAltitudeColor(altFt);
+        const headingRound = Math.round(f.heading);
+        marker._renderCacheKey = `${headingRound}_${altColor}_${isSelected}`;
         
         // Marker click listener
         marker.on('click', (e) => {

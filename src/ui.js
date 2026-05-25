@@ -10,6 +10,7 @@ export class UIController {
     this.appState = appState; // Reference to core app state
     this.currentAirportCode = 'CDG';
     this.activeBottomTab = ''; // 'airports', 'history', 'tactical'
+    this.weatherCache = new Map(); // cache to optimize weather fetches
   }
 
   init() {
@@ -468,12 +469,22 @@ export class UIController {
     document.getElementById('airport-fullname').innerText = apData.name;
     document.getElementById('airport-city').innerText = `${apData.city}, ${apData.country}`;
 
-    // Show placeholder while fetching real weather
-    document.getElementById('airport-temp').innerText = 'Chargement...';
-    document.getElementById('airport-wind').innerText = 'Vent: ...';
-
-    // Fetch REAL weather from Open-Meteo (async)
-    const wx = await fetchAirportWeather(code, apData.lat, apData.lng);
+    // Fetch REAL weather from cache or Open-Meteo
+    const currentTimeMs = Date.now();
+    const cached = this.weatherCache.get(code);
+    let wx = null;
+    
+    if (cached && (currentTimeMs - cached.timestamp < 300000)) { // 5-minute cache TTL
+      wx = cached.data;
+    } else {
+      // Show placeholder during real fetch only to avoid screen flashing
+      document.getElementById('airport-temp').innerText = 'Chargement...';
+      document.getElementById('airport-wind').innerText = 'Vent: ...';
+      wx = await fetchAirportWeather(code, apData.lat, apData.lng);
+      if (wx) {
+        this.weatherCache.set(code, { data: wx, timestamp: currentTimeMs });
+      }
+    }
 
     if (wx) {
       const tempStr = `${wx.tempC}°C`;

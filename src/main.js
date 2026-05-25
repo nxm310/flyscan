@@ -163,8 +163,11 @@ function startSimulationLoops() {
     document.getElementById('stat-active-flights').innerText = appState.simulation.flights.length;
     document.getElementById('stat-active-squawks').innerText = appState.simulation.activeSquawks;
 
-    // Refresh Airport Arrivals/Departures lists
-    appState.ui.updateAirportStatsPanel();
+    // Refresh Airport Arrivals/Departures lists (only if sidebar is actually open to optimize CPU)
+    const airportsSidebar = document.getElementById('airports-sidebar');
+    if (airportsSidebar && airportsSidebar.classList.contains('open')) {
+      appState.ui.updateAirportStatsPanel();
+    }
 
   }, 1000);
 

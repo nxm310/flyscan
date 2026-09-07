@@ -54,21 +54,21 @@ async function startAppLoading() {
   };
 
   try {
-    // Step 1: Instantiate Airspace simulator
-    updateProgress(15, "Instanciation du simulateur de vol...");
+    // Step 1: Instantiate Live Airspace Manager
+    updateProgress(15, "Connexion au récepteur ADS-B & Flightradar24...");
     appState.simulation = new AirspaceSimulator();
     
-    // Step 2: Initialize Airspace flight vectors (Live network feeds VATSIM + IVAO + dense tactical airspace)
-    await sleep(300);
-    updateProgress(30, "Connexion aux flux radars mondiaux en direct...");
+    // Step 2: Ingest physical flights currently in the sky
+    await sleep(250);
+    updateProgress(30, "Capture des signaux transpondeurs en direct...");
     appState.simulation.initialize();
     
     // Attempt real live vector fetch
-    const liveResult = await appState.simulation.fetchAndApplyLiveStates(46.8, 2.5);
+    const liveResult = await appState.simulation.fetchAndApplyLiveStates(48.85, 2.35);
     if (liveResult.success) {
-      updateProgress(50, `✅ ${liveResult.count} appareils actifs (${liveResult.liveCount} vols réels en direct)`);
+      updateProgress(50, `✅ ${liveResult.count} avions physiques réels captés en direct`);
     } else {
-      updateProgress(50, "Simulation tactique enrichie activée.");
+      updateProgress(50, "En attente des signaux transpondeurs...");
     }
 
     // Step 3: Initialize 2D Live Radar Map
@@ -118,8 +118,8 @@ async function startAppLoading() {
       if (squawkEl) squawkEl.innerText = visible.filter(f => f.isEmergency).length;
 
       const logoTag = document.querySelector('.logo-text .tag');
-      if (logoTag && appState.simulation.mode === 'live') {
-        logoTag.innerText = `DIRECT RÉSEAU (${visible.length})`;
+      if (logoTag) {
+        logoTag.innerText = `FLIGHTRADAR24 DIRECT (${visible.length})`;
       }
 
       // Update emergency alerts badge count for visible emergencies only
@@ -156,7 +156,14 @@ async function startAppLoading() {
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const center = appState.map.map.getCenter();
-        const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
+        const mapBounds = appState.map.map.getBounds();
+        const customBounds = {
+          south: mapBounds.getSouth(),
+          north: mapBounds.getNorth(),
+          west: mapBounds.getWest(),
+          east: mapBounds.getEast()
+        };
+        const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng, customBounds);
         if (result.success) {
           syncVisibleView();
           if (appState.is3DMode && appState.radar3d && appState.radar3d.isActive) {
@@ -167,7 +174,7 @@ async function startAppLoading() {
             );
           }
           const visibleNow = appState.map.getVisibleFlights(appState.simulation.flights, appState.filterCategory);
-          appState.ui.showToast(`🛰️ Secteur calé : ${visibleNow.length} vols visibles (${result.liveCount} réels).`);
+          appState.ui.showToast(`📡 ${visibleNow.length} avions physiques réels en direct (${result.source})`);
         }
       }, 800); // 800ms debounce to prevent API spam while dragging
     });
@@ -296,37 +303,42 @@ function startSimulationLoops() {
 
   }, 1000);
 
-  // 2. Live ADS-B Network sync loop (every 15 seconds for adsb.lol)
+  // 2. Live Flightradar24 & ADS-B sync loop (every 10 seconds)
   setInterval(async () => {
-    if (appState.simulation.mode === 'live') {
-      const center = appState.map.map.getCenter();
-      const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
+    const center = appState.map ? appState.map.map.getCenter() : { lat: 48.85, lng: 2.35 };
+    const mapBounds = appState.map ? appState.map.map.getBounds() : null;
+    const customBounds = mapBounds ? {
+      south: mapBounds.getSouth(),
+      north: mapBounds.getNorth(),
+      west: mapBounds.getWest(),
+      east: mapBounds.getEast()
+    } : null;
+
+    const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng, customBounds);
+    
+    const logoTag = document.querySelector('.logo-text .tag');
+    const visibleFlights = appState.map ? appState.map.getVisibleFlights(appState.simulation.flights, appState.filterCategory) : [];
+    if (result.success && logoTag) {
+      logoTag.innerText = `FLIGHTRADAR24 DIRECT (${visibleFlights.length})`;
+      logoTag.style.color = 'var(--color-primary)';
       
-      const logoTag = document.querySelector('.logo-text .tag');
-      const visibleFlights = appState.map ? appState.map.getVisibleFlights(appState.simulation.flights, appState.filterCategory) : [];
-      if (result.success && logoTag) {
-        logoTag.innerText = `DIRECT RÉSEAU (${visibleFlights.length})`;
-        logoTag.style.color = 'var(--color-primary)';
-        
-        // Trigger any NEW real emergency alerts detected in refresh - ONLY IF VISIBLE IN VIEW
-        appState.simulation.alerts
-          .filter(a => a.isReal)
-          .slice(0, 5)
-          .forEach(alert => {
-            const flight = appState.simulation.flights.find(f => f.id === alert.flightId);
-            if (flight && appState.map.isFlightInView(flight)) {
-              // Only trigger if not already shown (check by checking if banner is hidden)
-              const banner = document.getElementById('emergency-banner');
-              if (banner.classList.contains('hidden')) {
-                appState.ui.triggerSquawkToast(alert);
-              }
+      // Trigger any NEW real emergency alerts detected in refresh - ONLY IF VISIBLE IN VIEW
+      appState.simulation.alerts
+        .filter(a => a.isReal)
+        .slice(0, 5)
+        .forEach(alert => {
+          const flight = appState.simulation.flights.find(f => f.id === alert.flightId);
+          if (flight && appState.map.isFlightInView(flight)) {
+            const banner = document.getElementById('emergency-banner');
+            if (banner && banner.classList.contains('hidden')) {
+              appState.ui.triggerSquawkToast(alert);
             }
-          });
-      } else if (!result.success) {
-        console.warn('[ADS-B] Refresh failed, dead reckoning active');
-      }
+          }
+        });
+    } else if (!result.success) {
+      console.warn('[FLIGHTRADAR24/ADS-B] Refresh pending signal');
     }
-  }, 15000);
+  }, 10000);
 
   // NOTE: Fake random squawk alert loop REMOVED.
   // Only real squawk alerts from ADS-B data are shown.

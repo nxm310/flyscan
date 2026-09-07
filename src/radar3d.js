@@ -320,11 +320,13 @@ export class Radar3DController {
     });
   }
 
-  // Synchronise simulated flights inside the Three.js 3D space
+  // Synchronise live flights inside the Three.js 3D space
   update3DAirspace(flights, selectedFlightId, filterCategory) {
     this.appStateFlights = flights; // Cache for raycasting click handlers
     this.selectedFlightId = selectedFlightId;
     this.filterCategory = filterCategory;
+
+    const activeIds = new Set();
 
     flights.forEach(f => {
       const matchesFilter = checkFlightFilterMatch(f, filterCategory);
@@ -333,7 +335,6 @@ export class Radar3DController {
         this.removeAircraftGroup(f.id);
         return;
       }
-
 
       activeIds.add(f.id);
       

@@ -49,14 +49,32 @@ export class MapController {
 
 
 
-    // Init polyline trail
+    // Init origin-to-plane route polyline (dashed cyan)
+    this.originRoutePolyline = L.polyline([], {
+      color: '#00f2fe',
+      weight: 2,
+      opacity: 0.65,
+      dashArray: '6, 8',
+      lineCap: 'round'
+    }).addTo(this.map);
+
+    // Init polyline trail (actual breadcrumb path)
     this.trailPolyline = L.polyline([], {
       color: '#00f2fe',
       weight: 3.5,
-      opacity: 0.8,
+      opacity: 0.85,
       lineCap: 'round',
       lineJoin: 'round',
       className: 'glowing-flight-trail'
+    }).addTo(this.map);
+
+    // Init projected destination route polyline (dashed magenta/violet)
+    this.projectedRoutePolyline = L.polyline([], {
+      color: '#c084fc',
+      weight: 2.5,
+      opacity: 0.75,
+      dashArray: '6, 8',
+      lineCap: 'round'
     }).addTo(this.map);
 
     // User location marker (initially null)
@@ -308,25 +326,54 @@ export class MapController {
   updateTrail(selectedFlight) {
     if (!selectedFlight) {
       this.trailPolyline.setLatLngs([]);
+      if (this.originRoutePolyline) this.originRoutePolyline.setLatLngs([]);
+      if (this.projectedRoutePolyline) this.projectedRoutePolyline.setLatLngs([]);
       return;
     }
 
-    // Update coordinates and color
-    this.trailPolyline.setLatLngs(selectedFlight.routeHistory);
-    
+    // 1. Historical breadcrumb trail flown by the aircraft
+    this.trailPolyline.setLatLngs(selectedFlight.routeHistory || [[selectedFlight.lat, selectedFlight.lng]]);
     const color = selectedFlight.isEmergency ? '#ff2e63' : '#00f2fe';
     this.trailPolyline.setStyle({ color: color });
-    
-    // Re-add layer if needed to draw shadow glow
+
     const pathEl = this.trailPolyline.getElement();
     if (pathEl) {
       pathEl.style.filter = `drop-shadow(0 0 6px ${color})`;
+    }
+
+    // Helper: resolve lat/lng for airport
+    const getCoords = (ap) => {
+      if (!ap) return null;
+      if (typeof ap.lat === 'number' && typeof ap.lng === 'number') return [ap.lat, ap.lng];
+      const code = ap.code || (typeof ap === 'string' ? ap : null);
+      if (code && AIRPORTS[code]) return [AIRPORTS[code].lat, AIRPORTS[code].lng];
+      return null;
+    };
+
+    // 2. Origin -> Live Position (projected origin track)
+    const origCoords = getCoords(selectedFlight.origin);
+    if (origCoords && this.originRoutePolyline) {
+      const startPt = (selectedFlight.routeHistory && selectedFlight.routeHistory.length > 0)
+        ? selectedFlight.routeHistory[0]
+        : [selectedFlight.lat, selectedFlight.lng];
+      this.originRoutePolyline.setLatLngs([origCoords, startPt]);
+    } else if (this.originRoutePolyline) {
+      this.originRoutePolyline.setLatLngs([]);
+    }
+
+    // 3. Live Position -> Destination (projected forward arrival track)
+    const destCoords = getCoords(selectedFlight.destination);
+    if (destCoords && this.projectedRoutePolyline) {
+      this.projectedRoutePolyline.setLatLngs([[selectedFlight.lat, selectedFlight.lng], destCoords]);
+    } else if (this.projectedRoutePolyline) {
+      this.projectedRoutePolyline.setLatLngs([]);
     }
   }
 
   focusOnFlight(flight) {
     if (!flight) return;
-    this.map.flyTo([flight.lat, flight.lng], 8, {
+    const targetZoom = Math.max(this.map.getZoom(), 9.5);
+    this.map.flyTo([flight.lat, flight.lng], targetZoom, {
       animate: true,
       duration: 1.2
     });

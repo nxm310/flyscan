@@ -562,17 +562,25 @@ export class ARController {
         card.style.left = `${x}px`;
         card.style.top = `${y}px`;
         
-        const airlineCode = f.airline.code;
-        const modelShort = f.aircraftModel.split(' ')[0] + ' ' + (f.aircraftModel.split(' ')[1] || '');
+        const airlineCode = f.airline?.code || f.flightNumber?.slice(0, 2) || '';
+        const airlineName = f.airline?.name || 'Inconnu';
+        const modelStr = f.aircraftModel || f.t || 'Inconnu';
+        const modelParts = modelStr.split(' ');
+        const modelShort = modelParts[0] + (modelParts[1] ? ' ' + modelParts[1] : '');
+        const origCode = f.origin?.code || 'N/A';
+        const destCode = f.destination?.code || 'N/A';
+        const routeDisplay = (origCode !== 'N/A' || destCode !== 'N/A')
+          ? `${origCode} <i data-lucide="arrow-right" style="width:10px;height:10px;vertical-align:middle;display:inline-block"></i> ${destCode}`
+          : 'Vol local / VFR';
         
         card.innerHTML = `
           <div class="ar-target-marker ${emgClass}"></div>
           <div class="ar-target-panel">
-            <div class="flight-nr ${f.isEmergency ? 'emergency-text' : 'text-teal'}">${f.flightNumber}</div>
-            <div class="plane-model">${f.airline.name} / ${modelShort}</div>
-            <div class="route">${f.origin.code} <i data-lucide="arrow-right" style="width:10px;height:10px;vertical-align:middle;display:inline-block"></i> ${f.destination.code}</div>
+            <div class="flight-nr ${f.isEmergency ? 'emergency-text' : 'text-teal'}">${f.flightNumber || f.callsign || f.icao24}</div>
+            <div class="plane-model">${airlineName} / ${modelShort}</div>
+            <div class="route">${routeDisplay}</div>
             <div class="telemetry">
-              <span class="lbl-alt">ALT ${Math.round(f.altitude).toLocaleString()} ft</span>
+              <span class="lbl-alt">ALT ${Math.round(f.altitude || 0).toLocaleString()} ft</span>
               <span>DST ${Math.round(distance)} km</span>
             </div>
           </div>

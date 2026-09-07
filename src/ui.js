@@ -799,21 +799,27 @@ export class UIController {
     }
 
 
-    // Route — show what we know, otherwise show raw coords
-    const origCode = flight.origin?.code || '???';
-    const destCode = flight.destination?.code || '???';
+    // Route — show what we know, otherwise indicate local VFR / unfiled flight plan
+    const origCode = flight.origin?.code || 'N/A';
+    const destCode = flight.destination?.code || 'N/A';
     document.getElementById('det-origin-code').innerText = origCode;
-    document.getElementById('det-origin-name').innerText = AIRPORTS[origCode]?.name || flight.origin?.name || 'Départ inconnu';
+    document.getElementById('det-origin-name').innerText = (origCode !== 'N/A' && (AIRPORTS[origCode]?.name || flight.origin?.name)) || 'Vol local / VFR';
     document.getElementById('det-dest-code').innerText = destCode;
-    document.getElementById('det-dest-name').innerText = AIRPORTS[destCode]?.name || flight.destination?.name || 'Destination inconnue';
+    document.getElementById('det-dest-name').innerText = (destCode !== 'N/A' && (AIRPORTS[destCode]?.name || flight.destination?.name)) || 'Plan non déposé';
 
-    // Route progress bar (use 50% as default for live flights without route data)
-    const progressPercent = Math.round((flight.progress || 0.5) * 100);
+    // Route progress bar (use calculated progress if route known, or neutral indicator)
     const progBar = document.getElementById('det-route-progress-bar');
-    if (progBar) progBar.style.left = `${Math.min(95, progressPercent)}%`;
-    document.getElementById('det-progress-percent').innerText = `${progressPercent}%`;
+    const progPercentEl = document.getElementById('det-progress-percent');
+    if (flight.progress !== null && flight.progress !== undefined) {
+      const progressPercent = Math.round(flight.progress * 100);
+      if (progBar) progBar.style.left = `${Math.min(95, Math.max(5, progressPercent))}%`;
+      if (progPercentEl) progPercentEl.innerText = `${progressPercent}%`;
+    } else {
+      if (progBar) progBar.style.left = '50%';
+      if (progPercentEl) progPercentEl.innerText = 'En route';
+    }
 
-    // Times (live data only shows current timestamp)
+    // Times (live data shows current real timestamp)
     const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('det-departure-time').innerText = flight.isLive ? '—' : '10:45';
     document.getElementById('det-arrival-time').innerText = flight.isLive ? now : '14:20';
@@ -879,7 +885,7 @@ export class UIController {
         ['Année de construction', flight.year || '—'],
         ['Description type', flight.desc || flight.aircraftModel || '—'],
         ['Statut', flight.onGround ? '🛑 Au sol' : `✈️ En vol — ${altM.toLocaleString()} m`],
-        ['Source', flight.isLive ? '📡 ADS-B Temps Réel' : '🔵 Simulation'],
+        ['Source', flight._source || '📡 Transpondeur ADS-B Temps Réel'],
         ...(flight.rssi !== null && flight.rssi !== undefined ? [['Signal RSSI', `${flight.rssi} dBFS`]] : []),
         ...(flight.messages ? [['Messages reçus', flight.messages.toLocaleString()]] : []),
       ];
@@ -1058,18 +1064,20 @@ export class UIController {
     document.getElementById('airport-arr-delay').innerText = `${arrDelay} min`;
     document.getElementById('airport-dep-delay').innerText = `${depDelay} min`;
 
-    // Arrivals: aircraft flying TOWARD this airport (heading within 45° of airport bearing)
-    // and within 300km. Sorted by distance (closest = most imminent arrival).
+    // Arrivals: match explicit destination airport OR incoming aircraft on final/approach
     const arrivals = allFlights
       .filter(f => {
+        const isDestMatch = f.destination && (f.destination.code === code || f.destination.iata === code);
+        if (isDestMatch) return true;
+        
+        // Secondary: physical inbound heading within 150km
         const dlat = apData.lat - f.lat;
         const dlng = apData.lng - f.lng;
         const distDeg = Math.sqrt(dlat*dlat + dlng*dlng);
-        if (distDeg > 3.0) return false; // max ~330km
-        // Bearing from flight to airport
+        if (distDeg > 1.5) return false; // max ~165km
         const bearing = (Math.atan2(dlng, dlat) * 180 / Math.PI + 360) % 360;
         const hdgDiff = Math.abs(((f.heading - bearing) + 180 + 360) % 360 - 180);
-        return hdgDiff < 50; // heading within 50° of airport
+        return hdgDiff < 45 && f.verticalSpeed <= 100;
       })
       .sort((a, b) => {
         const da = Math.hypot(a.lat - apData.lat, a.lng - apData.lng);
@@ -1077,17 +1085,19 @@ export class UIController {
         return da - db;
       });
 
-    // Departures: aircraft flying AWAY from this airport within 100km
+    // Departures: match explicit origin airport OR aircraft climbing away within 90km
     const departures = allFlights
       .filter(f => {
+        const isOrgMatch = f.origin && (f.origin.code === code || f.origin.iata === code);
+        if (isOrgMatch) return true;
+
         const dlat = apData.lat - f.lat;
         const dlng = apData.lng - f.lng;
         const distDeg = Math.sqrt(dlat*dlat + dlng*dlng);
-        if (distDeg > 1.0 || distDeg < 0.01) return false; // within ~110km but not at 0
-        // Bearing from airport to flight (departing direction)
+        if (distDeg > 0.85 || distDeg < 0.01) return false; // within ~95km
         const bearing = (Math.atan2(-dlng, -dlat) * 180 / Math.PI + 360) % 360;
         const hdgDiff = Math.abs(((f.heading - bearing) + 180 + 360) % 360 - 180);
-        return hdgDiff < 60; // heading away from airport
+        return hdgDiff < 55 && f.verticalSpeed >= 50;
       })
       .sort((a, b) => {
         const da = Math.hypot(a.lat - apData.lat, a.lng - apData.lng);
@@ -1114,16 +1124,17 @@ export class UIController {
     if (arrivals.length === 0) {
       arrListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucune arrivée détectée en approche.</div>';
     } else {
-      arrivals.slice(0, 5).forEach(arr => {
+      arrivals.slice(0, 6).forEach(arr => {
         const distKm = Math.round(Math.hypot(arr.lat - apData.lat, arr.lng - apData.lng) * 111);
+        const origLabel = (arr.origin?.code && arr.origin.code !== 'N/A') ? arr.origin.code : '';
         const row = document.createElement('div');
         row.className = 'queue-flight-row';
         row.innerHTML = `
-          <span class="q-flight-nr">${arr.flightNumber}</span>
-          <span class="q-flight-route">${distKm} km</span>
+          <span class="q-flight-nr">${arr.flightNumber || arr.callsign}</span>
+          <span class="q-flight-route">${origLabel ? origLabel + ' ➔ ' : ''}${distKm} km</span>
           <span class="q-flight-time">${fmtTime(arr)}</span>
-          <span class="q-flight-status ${distKm < 30 ? 'landed' : 'ontime'}">
-            ${distKm < 30 ? 'FINALE' : 'EN ROUTE'}
+          <span class="q-flight-status ${distKm < 25 ? 'landed' : 'ontime'}">
+            ${distKm < 25 ? 'FINALE' : (distKm < 60 ? 'APPROCHE' : 'EN ROUTE')}
           </span>
         `;
         row.addEventListener('click', () => {
@@ -1142,15 +1153,16 @@ export class UIController {
     if (departures.length === 0) {
       depListEl.innerHTML = '<div class="no-alerts" style="padding:10px 0">Aucun départ détecté à proximité.</div>';
     } else {
-      departures.slice(0, 5).forEach(dep => {
+      departures.slice(0, 6).forEach(dep => {
         const distKm = Math.round(Math.hypot(dep.lat - apData.lat, dep.lng - apData.lng) * 111);
+        const destLabel = (dep.destination?.code && dep.destination.code !== 'N/A') ? dep.destination.code : '';
         const row = document.createElement('div');
         row.className = 'queue-flight-row';
         row.innerHTML = `
-          <span class="q-flight-nr">${dep.flightNumber}</span>
-          <span class="q-flight-route">${dep.heading.toFixed(0)}° – ${dep.speed} kts</span>
-          <span class="q-flight-time">${distKm} km</span>
-          <span class="q-flight-status ontime">MONTÉE</span>
+          <span class="q-flight-nr">${dep.flightNumber || dep.callsign}</span>
+          <span class="q-flight-route">${destLabel ? '➔ ' + destLabel : Math.round(dep.heading) + '°'} (${distKm} km)</span>
+          <span class="q-flight-time">${Math.round(dep.altitudeM || (dep.altitude * 0.3048))} m</span>
+          <span class="q-flight-status ontime">${dep.verticalSpeed > 200 ? 'MONTÉE' : 'DÉCOLLÉ'}</span>
         `;
         row.addEventListener('click', () => {
           this.selectFlight(dep);
@@ -1471,16 +1483,30 @@ export class UIController {
              ap.country.toLowerCase().includes(normQuery);
     });
 
-    // 2. Search for flights (including expanded airport checks)
+    // 2. Search for flights (including callsign, registration, transponder hex, squawk, airports)
     const matchedFlights = flights.filter(f => {
-      const origAp = AIRPORTS[f.origin.code];
-      const destAp = AIRPORTS[f.destination.code];
+      const origCode = f.origin?.code;
+      const destCode = f.destination?.code;
+      const origAp = (origCode && origCode !== 'N/A') ? AIRPORTS[origCode] : null;
+      const destAp = (destCode && destCode !== 'N/A') ? AIRPORTS[destCode] : null;
+
+      const flightNo = String(f.flightNumber || '').toLowerCase();
+      const callsign = String(f.callsign || '').toLowerCase();
+      const reg = String(f.registration || f.r || '').toLowerCase();
+      const hex = String(f.icao24 || f.id || '').toLowerCase();
+      const airlineName = String(f.airline?.name || '').toLowerCase();
+      const model = String(f.aircraftModel || f.t || '').toLowerCase();
+      const squawk = String(f.squawk || '').toLowerCase();
       
-      return f.flightNumber.toLowerCase().includes(normQuery) ||
-             f.airline.name.toLowerCase().includes(normQuery) ||
-             f.aircraftModel.toLowerCase().includes(normQuery) ||
-             f.origin.code.toLowerCase().includes(normQuery) ||
-             f.destination.code.toLowerCase().includes(normQuery) ||
+      return flightNo.includes(normQuery) ||
+             callsign.includes(normQuery) ||
+             reg.includes(normQuery) ||
+             hex.includes(normQuery) ||
+             airlineName.includes(normQuery) ||
+             model.includes(normQuery) ||
+             squawk.includes(normQuery) ||
+             (origCode && origCode.toLowerCase().includes(normQuery)) ||
+             (destCode && destCode.toLowerCase().includes(normQuery)) ||
              (origAp && (origAp.name.toLowerCase().includes(normQuery) || origAp.city.toLowerCase().includes(normQuery))) ||
              (destAp && (destAp.name.toLowerCase().includes(normQuery) || destAp.city.toLowerCase().includes(normQuery)));
     });
@@ -1528,17 +1554,23 @@ export class UIController {
     });
 
     // Render flights matching the query
-    matchedFlights.slice(0, 5).forEach(f => {
+    matchedFlights.slice(0, 6).forEach(f => {
       const div = document.createElement('div');
       div.className = 'search-item';
       
       const catClass = f.category === 'MILITARY' ? 'mil' : (f.category === 'PRIVATE' ? 'prv' : 'civ');
       const catLabel = f.category === 'MILITARY' ? 'MILITAIRE' : (f.category === 'PRIVATE' ? 'PRIVÉ' : 'CIVIL');
+      const airlineName = f.airline?.name || 'Inconnu';
+      const flightTitle = f.flightNumber || f.callsign || f.registration || f.icao24;
+      const routeText = (f.origin?.code && f.origin.code !== 'N/A' && f.destination?.code && f.destination.code !== 'N/A')
+        ? `${f.origin.code} ✈ ${f.destination.code}`
+        : 'Vol local / VFR';
+      const regText = (f.registration && f.registration !== flightTitle) ? ` [${f.registration}]` : '';
 
       div.innerHTML = `
         <div class="search-item-left">
-          <span class="search-item-title">${f.flightNumber} — ${f.airline.name}</span>
-          <span class="search-item-sub">${f.aircraftModel} (${f.origin.code} ✈ ${f.destination.code})</span>
+          <span class="search-item-title">${flightTitle}${regText} — ${airlineName}</span>
+          <span class="search-item-sub">${f.aircraftModel || f.t || 'Appareil'} (${routeText})</span>
         </div>
         <span class="search-item-badge ${catClass}">${catLabel}</span>
       `;

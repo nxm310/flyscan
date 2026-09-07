@@ -205,7 +205,23 @@ export const AIRPORTS = {
   NTE: { code: 'NTE', name: 'Nantes Atlantique', city: 'Nantes', country: 'France', lat: 47.1532, lng: -1.6111, iata: 'NTE', rwyHdg: 211, windDir: 240, windSpeed: 16, temp: 16, delayIndex: 0.5 },
   BIA: { code: 'BIA', name: 'Bastia Poretta', city: 'Bastia', country: 'Corse', lat: 42.5527, lng: 9.4835, iata: 'BIA', rwyHdg: 160, windDir: 200, windSpeed: 9, temp: 24, delayIndex: 0.3 },
   AJA: { code: 'AJA', name: 'Ajaccio Napoléon Bonaparte', city: 'Ajaccio', country: 'Corse', lat: 41.9236, lng: 8.8029, iata: 'AJA', rwyHdg: 200, windDir: 180, windSpeed: 8, temp: 24, delayIndex: 0.2 },
+  CLY: { code: 'CLY', name: 'Calvi Sainte-Catherine', city: 'Calvi', country: 'Corse', lat: 42.5206, lng: 8.7931, iata: 'CLY', rwyHdg: 180, windDir: 190, windSpeed: 8, temp: 24, delayIndex: 0.2 },
+  FSC: { code: 'FSC', name: 'Figari Sud-Corse', city: 'Figari', country: 'Corse', lat: 41.5006, lng: 9.0978, iata: 'FSC', rwyHdg: 230, windDir: 220, windSpeed: 10, temp: 25, delayIndex: 0.2 },
   SXB: { code: 'SXB', name: 'Strasbourg', city: 'Strasbourg', country: 'France', lat: 48.5383, lng: 7.6280, iata: 'SXB', rwyHdg: 230, windDir: 260, windSpeed: 9, temp: 15, delayIndex: 0.3 },
+  BES: { code: 'BES', name: 'Brest Bretagne', city: 'Brest', country: 'France', lat: 48.4478, lng: -4.4222, iata: 'BES', rwyHdg: 260, windDir: 250, windSpeed: 18, temp: 15, delayIndex: 0.3 },
+  RNS: { code: 'RNS', name: 'Rennes Bretagne', city: 'Rennes', country: 'France', lat: 48.0719, lng: -1.7322, iata: 'RNS', rwyHdg: 280, windDir: 240, windSpeed: 15, temp: 16, delayIndex: 0.3 },
+  BIQ: { code: 'BIQ', name: 'Biarritz Pays Basque', city: 'Biarritz', country: 'France', lat: 43.4683, lng: -1.5311, iata: 'BIQ', rwyHdg: 270, windDir: 260, windSpeed: 12, temp: 19, delayIndex: 0.3 },
+  MPL: { code: 'MPL', name: 'Montpellier Méditerranée', city: 'Montpellier', country: 'France', lat: 43.5764, lng: 3.9631, iata: 'MPL', rwyHdg: 305, windDir: 320, windSpeed: 16, temp: 22, delayIndex: 0.4 },
+  PGF: { code: 'PGF', name: 'Perpignan Rivesaltes', city: 'Perpignan', country: 'France', lat: 42.7408, lng: 2.8706, iata: 'PGF', rwyHdg: 330, windDir: 320, windSpeed: 18, temp: 23, delayIndex: 0.3 },
+  TLN: { code: 'TLN', name: 'Toulon-Hyères', city: 'Toulon', country: 'France', lat: 43.0972, lng: 6.1461, iata: 'TLN', rwyHdg: 230, windDir: 240, windSpeed: 14, temp: 22, delayIndex: 0.3 },
+  LIL: { code: 'LIL', name: 'Lille-Lesquin', city: 'Lille', country: 'France', lat: 50.5619, lng: 3.0894, iata: 'LIL', rwyHdg: 260, windDir: 230, windSpeed: 15, temp: 15, delayIndex: 0.4 },
+  PUF: { code: 'PUF', name: 'Pau Pyrénées', city: 'Pau', country: 'France', lat: 43.3800, lng: -0.4186, iata: 'PUF', rwyHdg: 310, windDir: 270, windSpeed: 10, temp: 18, delayIndex: 0.2 },
+  LDE: { code: 'LDE', name: 'Tarbes-Lourdes-Pyrénées', city: 'Tarbes', country: 'France', lat: 43.1789, lng: -0.0064, iata: 'LDE', rwyHdg: 200, windDir: 220, windSpeed: 9, temp: 17, delayIndex: 0.2 },
+  FDF: { code: 'FDF', name: 'Martinique Aimé Césaire', city: 'Fort-de-France', country: 'Martinique', lat: 14.5911, lng: -61.0031, iata: 'FDF', rwyHdg: 100, windDir: 90, windSpeed: 15, temp: 29, delayIndex: 0.8 },
+  PTP: { code: 'PTP', name: 'Pointe-à-Pitre Le Raizet', city: 'Pointe-à-Pitre', country: 'Guadeloupe', lat: 16.2653, lng: -61.5317, iata: 'PTP', rwyHdg: 120, windDir: 90, windSpeed: 14, temp: 29, delayIndex: 0.7 },
+  RUN: { code: 'RUN', name: 'Roland Garros', city: 'Saint-Denis', country: 'La Réunion', lat: -20.8872, lng: 55.5103, iata: 'RUN', rwyHdg: 140, windDir: 120, windSpeed: 16, temp: 26, delayIndex: 0.8 },
+  DUB: { code: 'DUB', name: 'Dublin Airport', city: 'Dublin', country: 'Irlande', lat: 53.4213, lng: -6.2701, iata: 'DUB', rwyHdg: 280, windDir: 240, windSpeed: 18, temp: 13, delayIndex: 1.6 },
+  ORK: { code: 'ORK', name: 'Cork Airport', city: 'Cork', country: 'Irlande', lat: 51.8413, lng: -8.4911, iata: 'ORK', rwyHdg: 250, windDir: 230, windSpeed: 16, temp: 12, delayIndex: 1.1 },
   // === EUROPE ===
   LHR: { code: 'LHR', name: 'London Heathrow', city: 'Londres', country: 'Royaume-Uni', lat: 51.4700, lng: -0.4543, iata: 'LHR', windDir: 230, windSpeed: 18, temp: 15, delayIndex: 3.1 },
   LGW: { code: 'LGW', name: 'London Gatwick', city: 'Londres', country: 'Royaume-Uni', lat: 51.1537, lng: -0.1821, iata: 'LGW', windDir: 240, windSpeed: 16, temp: 15, delayIndex: 2.4 },
@@ -224,13 +240,34 @@ export const AIRPORTS = {
   BCN: { code: 'BCN', name: 'Josep Tarradellas Barcelona-El Prat', city: 'Barcelone', country: 'Espagne', lat: 41.2971, lng: 2.0785, iata: 'BCN', windDir: 210, windSpeed: 10, temp: 22, delayIndex: 1.5 },
   VLC: { code: 'VLC', name: 'Valencia Airport', city: 'Valence', country: 'Espagne', lat: 39.4893, lng: -0.4816, iata: 'VLC', windDir: 190, windSpeed: 9, temp: 23, delayIndex: 0.8 },
   PMI: { code: 'PMI', name: 'Palma de Mallorca', city: 'Palma', country: 'Espagne', lat: 39.5517, lng: 2.7388, iata: 'PMI', windDir: 200, windSpeed: 11, temp: 24, delayIndex: 1.0 },
+  AGP: { code: 'AGP', name: 'Málaga-Costa del Sol', city: 'Malaga', country: 'Espagne', lat: 36.6749, lng: -4.4991, iata: 'AGP', windDir: 180, windSpeed: 10, temp: 25, delayIndex: 1.0 },
+  IBZ: { code: 'IBZ', name: 'Ibiza Airport', city: 'Ibiza', country: 'Espagne', lat: 38.8729, lng: 1.3731, iata: 'IBZ', windDir: 200, windSpeed: 10, temp: 25, delayIndex: 0.9 },
+  ALC: { code: 'ALC', name: 'Alicante-Elche', city: 'Alicante', country: 'Espagne', lat: 38.2822, lng: -0.5582, iata: 'ALC', windDir: 190, windSpeed: 9, temp: 24, delayIndex: 0.9 },
+  SVQ: { code: 'SVQ', name: 'Seville Airport', city: 'Séville', country: 'Espagne', lat: 37.4180, lng: -5.8931, iata: 'SVQ', windDir: 220, windSpeed: 11, temp: 27, delayIndex: 0.8 },
+  BIO: { code: 'BIO', name: 'Bilbao Airport', city: 'Bilbao', country: 'Espagne', lat: 43.3011, lng: -2.9106, iata: 'BIO', windDir: 250, windSpeed: 12, temp: 18, delayIndex: 0.7 },
+  TFS: { code: 'TFS', name: 'Tenerife Sur', city: 'Tenerife', country: 'Espagne', lat: 28.0445, lng: -16.5725, iata: 'TFS', windDir: 60, windSpeed: 14, temp: 26, delayIndex: 1.1 },
+  LPA: { code: 'LPA', name: 'Gran Canaria', city: 'Las Palmas', country: 'Espagne', lat: 27.9319, lng: -15.3866, iata: 'LPA', windDir: 50, windSpeed: 15, temp: 25, delayIndex: 1.0 },
+  FAO: { code: 'FAO', name: 'Faro Airport', city: 'Faro', country: 'Portugal', lat: 37.0144, lng: -7.9659, iata: 'FAO', windDir: 230, windSpeed: 12, temp: 22, delayIndex: 0.9 },
+  FNC: { code: 'FNC', name: 'Madeira Cristiano Ronaldo', city: 'Funchal', country: 'Portugal', lat: 32.6979, lng: -16.7744, iata: 'FNC', windDir: 40, windSpeed: 18, temp: 22, delayIndex: 1.5 },
   FCO: { code: 'FCO', name: 'Leonardo da Vinci', city: 'Rome', country: 'Italie', lat: 41.8003, lng: 12.2389, iata: 'FCO', windDir: 210, windSpeed: 9, temp: 22, delayIndex: 2.2 },
   MXP: { code: 'MXP', name: 'Milan Malpensa', city: 'Milan', country: 'Italie', lat: 45.6306, lng: 8.7281, iata: 'MXP', windDir: 250, windSpeed: 8, temp: 18, delayIndex: 1.8 },
+  BLQ: { code: 'BLQ', name: 'Bologna Guglielmo Marconi', city: 'Bologne', country: 'Italie', lat: 44.5354, lng: 11.2887, iata: 'BLQ', windDir: 240, windSpeed: 8, temp: 19, delayIndex: 1.1 },
   VCE: { code: 'VCE', name: 'Venice Marco Polo', city: 'Venise', country: 'Italie', lat: 45.5053, lng: 12.3519, iata: 'VCE', windDir: 230, windSpeed: 7, temp: 18, delayIndex: 1.2 },
   NAP: { code: 'NAP', name: 'Naples Capodichino', city: 'Naples', country: 'Italie', lat: 40.8860, lng: 14.2908, iata: 'NAP', windDir: 200, windSpeed: 8, temp: 24, delayIndex: 1.0 },
+  CTA: { code: 'CTA', name: 'Catania Fontanarossa', city: 'Catane', country: 'Italie', lat: 37.4668, lng: 15.0664, iata: 'CTA', windDir: 190, windSpeed: 9, temp: 25, delayIndex: 1.2 },
+  PMO: { code: 'PMO', name: 'Palermo Falcone Borsellino', city: 'Palerme', country: 'Italie', lat: 38.1760, lng: 13.0910, iata: 'PMO', windDir: 210, windSpeed: 10, temp: 24, delayIndex: 1.0 },
   ATH: { code: 'ATH', name: 'Eleftherios Venizelos', city: 'Athènes', country: 'Grèce', lat: 37.9364, lng: 23.9445, iata: 'ATH', windDir: 160, windSpeed: 10, temp: 26, delayIndex: 1.6 },
+  HER: { code: 'HER', name: 'Heraklion Nikos Kazantzakis', city: 'Héraklion', country: 'Grèce', lat: 35.3397, lng: 25.1803, iata: 'HER', windDir: 320, windSpeed: 15, temp: 27, delayIndex: 1.3 },
+  RHO: { code: 'RHO', name: 'Rhodes Diagoras', city: 'Rhodes', country: 'Grèce', lat: 36.4054, lng: 28.0862, iata: 'RHO', windDir: 300, windSpeed: 14, temp: 27, delayIndex: 1.1 },
+  CFU: { code: 'CFU', name: 'Corfu Ioannis Kapodistrias', city: 'Corfou', country: 'Grèce', lat: 39.6019, lng: 19.9117, iata: 'CFU', windDir: 220, windSpeed: 9, temp: 25, delayIndex: 1.0 },
   LIS: { code: 'LIS', name: 'Humberto Delgado', city: 'Lisbonne', country: 'Portugal', lat: 38.7813, lng: -9.1359, iata: 'LIS', windDir: 220, windSpeed: 14, temp: 21, delayIndex: 1.4 },
   OPO: { code: 'OPO', name: 'Francisco de Sá Carneiro', city: 'Porto', country: 'Portugal', lat: 41.2481, lng: -8.6814, iata: 'OPO', windDir: 230, windSpeed: 16, temp: 19, delayIndex: 0.9 },
+  RAK: { code: 'RAK', name: 'Marrakech Menara', city: 'Marrakech', country: 'Maroc', lat: 31.6069, lng: -8.0363, iata: 'RAK', windDir: 260, windSpeed: 10, temp: 28, delayIndex: 1.2 },
+  AGA: { code: 'AGA', name: 'Agadir Al Massira', city: 'Agadir', country: 'Maroc', lat: 30.3250, lng: -9.4131, iata: 'AGA', windDir: 270, windSpeed: 12, temp: 25, delayIndex: 0.9 },
+  FEZ: { code: 'FEZ', name: 'Fès-Saïss', city: 'Fès', country: 'Maroc', lat: 33.9273, lng: -4.9778, iata: 'FEZ', windDir: 250, windSpeed: 11, temp: 27, delayIndex: 0.8 },
+  TNG: { code: 'TNG', name: 'Tangier Ibn Battouta', city: 'Tanger', country: 'Maroc', lat: 35.7269, lng: -5.9169, iata: 'TNG', windDir: 260, windSpeed: 15, temp: 23, delayIndex: 0.9 },
+  DJE: { code: 'DJE', name: 'Djerba-Zarzis', city: 'Djerba', country: 'Tunisie', lat: 33.8750, lng: 10.7755, iata: 'DJE', windDir: 120, windSpeed: 12, temp: 28, delayIndex: 0.8 },
+  AYT: { code: 'AYT', name: 'Antalya Airport', city: 'Antalya', country: 'Turquie', lat: 36.8987, lng: 30.8005, iata: 'AYT', windDir: 180, windSpeed: 9, temp: 29, delayIndex: 1.4 },
   VIE: { code: 'VIE', name: 'Vienna International', city: 'Vienne', country: 'Autriche', lat: 48.1103, lng: 16.5697, iata: 'VIE', windDir: 260, windSpeed: 10, temp: 14, delayIndex: 1.7 },
   PRG: { code: 'PRG', name: 'Václav Havel', city: 'Prague', country: 'Tchéquie', lat: 50.1008, lng: 14.2600, iata: 'PRG', windDir: 250, windSpeed: 11, temp: 13, delayIndex: 1.3 },
   WAW: { code: 'WAW', name: 'Warsaw Chopin', city: 'Varsovie', country: 'Pologne', lat: 52.1657, lng: 20.9671, iata: 'WAW', windDir: 240, windSpeed: 12, temp: 12, delayIndex: 1.4 },
@@ -319,10 +356,15 @@ export const ICAO_TO_IATA = {
   EGLL: 'LHR', EGKK: 'LGW', EGSS: 'STN', EGCC: 'MAN', EGPH: 'EDI', EGGW: 'LTN', EGBB: 'BHX',
   EDDF: 'FRA', EDDM: 'MUC', EDDB: 'BER', EDDL: 'DUS', EDDH: 'HAM', EDDK: 'CGN', EDDS: 'STR',
   EHAM: 'AMS', EBBR: 'BRU', LSGG: 'GVA', LSZH: 'ZRH',
-  LEMD: 'MAD', LEBL: 'BCN', LEVC: 'VLC', LEPA: 'PMI', LEMG: 'AGP',
-  LIRF: 'FCO', LIMC: 'MXP', LIPZ: 'VCE', LIRN: 'NAP',
-  LGAV: 'ATH', LPPT: 'LIS', LPPR: 'OPO', LOWW: 'VIE', LKPR: 'PRG', EPWA: 'WAW', LHBP: 'BUD',
-  EKCH: 'CPH', ENGM: 'OSL', ESSA: 'ARN', EFHK: 'HEL', UUEE: 'SVO', LTFM: 'IST', LTBA: 'IST',
+  LEMD: 'MAD', LEBL: 'BCN', LEVC: 'VLC', LEPA: 'PMI', LEMG: 'AGP', LEIB: 'IBZ', LEAL: 'ALC', LEZL: 'SVQ', LEBB: 'BIO',
+  GCTS: 'TFS', GCLP: 'LPA', LPFR: 'FAO', LPMA: 'FNC',
+  LIRF: 'FCO', LIMC: 'MXP', LIPZ: 'VCE', LIRN: 'NAP', LIPE: 'BLQ', LICC: 'CTA', LICJ: 'PMO',
+  LGAV: 'ATH', LGIR: 'HER', LGRP: 'RHO', LGKR: 'CFU',
+  LPPT: 'LIS', LPPR: 'OPO', LOWW: 'VIE', LKPR: 'PRG', EPWA: 'WAW', LHBP: 'BUD',
+  EKCH: 'CPH', ENGM: 'OSL', ESSA: 'ARN', EFHK: 'HEL', UUEE: 'SVO', LTFM: 'IST', LTBA: 'IST', LTAI: 'AYT',
+  EIDW: 'DUB', EICK: 'ORK',
+  TFFF: 'FDF', TFFR: 'PTP', FMEE: 'RUN',
+  GMMX: 'RAK', GMAD: 'AGA', GMFF: 'FEZ', GMTT: 'TNG', DTTJ: 'DJE',
   OMDB: 'DXB', OMAA: 'AUH', OTHH: 'DOH', OKBK: 'KWI', OBBI: 'BAH', LLBG: 'TLV', OJAI: 'AMM', OLBA: 'BEY',
   OIIE: 'THR', OPKC: 'KHI', VIDP: 'DEL', VABB: 'BOM', VOBL: 'BLR', VOMM: 'MAA',
   RJTT: 'HND', RJAA: 'NRT', RJBB: 'KIX', RKSI: 'ICN', ZBAA: 'PEK', ZSPD: 'PVG', VHHH: 'HKG',
@@ -335,7 +377,9 @@ export const ICAO_TO_IATA = {
 };
 
 export function resolveAirport(code) {
-  if (!code) return { code: '???', name: 'Inconnu', city: 'Inconnu', country: '' };
+  if (!code || code === '???' || code === 'N/A') {
+    return { code: 'N/A', name: 'Non renseigné', city: 'Vol local / VFR', country: '' };
+  }
   const clean = code.trim().toUpperCase();
   if (AIRPORTS[clean]) return AIRPORTS[clean];
   const iata = ICAO_TO_IATA[clean];
@@ -352,6 +396,10 @@ export function resolveAirport(code) {
   else if (clean.startsWith('EB')) country = 'Belgique';
   else if (clean.startsWith('EH')) country = 'Pays-Bas';
   else if (clean.startsWith('LO')) country = 'Autriche';
+  else if (clean.startsWith('EI')) country = 'Irlande';
+  else if (clean.startsWith('GM')) country = 'Maroc';
+  else if (clean.startsWith('DA')) country = 'Algérie';
+  else if (clean.startsWith('DT')) country = 'Tunisie';
   else if (clean.startsWith('K')) country = 'États-Unis';
   else if (clean.startsWith('C')) country = 'Canada';
   else if (clean.startsWith('Y')) country = 'Australie';
@@ -360,7 +408,7 @@ export function resolveAirport(code) {
 
   return {
     code: clean,
-    name: `Aérodrome ${clean}`,
+    name: `Aéroport ${clean}`,
     city: clean,
     country: country
   };
@@ -489,55 +537,50 @@ export class LiveFlight {
     this.year = raw.year ?? '';
     this.desc = raw.desc ?? '';
     
-    // Origin / Destination: prioritize real flight plan departure/arrival, otherwise deterministic fallback
+    // Origin / Destination: prioritize real flight plan departure/arrival
     if (raw.origin && raw.origin.name) {
       this.origin = raw.origin;
-    } else if (raw.departure) {
+    } else if (raw.departure && String(raw.departure).trim() !== '' && raw.departure !== '???') {
       this.origin = resolveAirport(raw.departure);
     } else {
-      const airportKeys = Object.keys(AIRPORTS);
-      const hexNum = parseInt(this.id, 16) || 0;
-      const orgIdx = hexNum % airportKeys.length;
-      const orgCode = airportKeys[orgIdx];
-      const originAirport = AIRPORTS[orgCode] || AIRPORTS.CDG;
       this.origin = { 
-        code: orgCode, 
-        name: originAirport.name, 
-        city: originAirport.city, 
-        country: originAirport.country 
+        code: 'N/A', 
+        name: 'Origine non renseignée', 
+        city: 'Vol local / VFR', 
+        country: '' 
       };
     }
 
     if (raw.destination && raw.destination.name) {
       this.destination = raw.destination;
-    } else if (raw.arrival) {
+    } else if (raw.arrival && String(raw.arrival).trim() !== '' && raw.arrival !== '???') {
       this.destination = resolveAirport(raw.arrival);
     } else {
-      const airportKeys = Object.keys(AIRPORTS);
-      const hexNum = parseInt(this.id, 16) || 0;
-      let dstIdx = (hexNum + 13) % airportKeys.length;
-      if (airportKeys[dstIdx] === this.origin.code) dstIdx = (dstIdx + 1) % airportKeys.length;
-      const dstCode = airportKeys[dstIdx];
-      const destAirport = AIRPORTS[dstCode] || AIRPORTS.LHR;
       this.destination = { 
-        code: dstCode, 
-        name: destAirport.name, 
-        city: destAirport.city, 
-        country: destAirport.country 
+        code: 'N/A', 
+        name: 'Destination non renseignée', 
+        city: 'Vol local / VFR', 
+        country: '' 
       };
     }
     
     // Trail
     this.routeHistory = buildTrail(this.lat, this.lng, this.heading, this.speed);
     
-    // Progress (simulated dynamically for UI progress bar based on ICAO hex)
-    const hexNum = parseInt(this.id, 16) || 0;
-    this.progress = 0.15 + ((hexNum * 7) % 70) / 100; // Between 15% and 85%
-    
-    // Calculate distance in km between deterministic origin and destination
-    const orgData = AIRPORTS[this.origin.code] || { lat: 48.85, lng: 2.35 };
-    const dstData = AIRPORTS[this.destination.code] || { lat: 40.71, lng: -74.00 };
-    this.totalDistance = Math.round(getDistance(orgData.lat, orgData.lng, dstData.lat, dstData.lng));
+    // Calculate distance in km and progress along route if both origin and destination have known coords
+    const orgData = (this.origin.code !== 'N/A' && AIRPORTS[this.origin.code]) ? AIRPORTS[this.origin.code] : null;
+    const dstData = (this.destination.code !== 'N/A' && AIRPORTS[this.destination.code]) ? AIRPORTS[this.destination.code] : null;
+
+    if (orgData && dstData) {
+      this.totalDistance = Math.round(getDistance(orgData.lat, orgData.lng, dstData.lat, dstData.lng));
+      const distFromOrg = getDistance(orgData.lat, orgData.lng, this.lat, this.lng);
+      const distToDst = getDistance(this.lat, this.lng, dstData.lat, dstData.lng);
+      const sumDist = distFromOrg + distToDst;
+      this.progress = sumDist > 0 ? Math.min(0.99, Math.max(0.01, distFromOrg / sumDist)) : 0.5;
+    } else {
+      this.totalDistance = null;
+      this.progress = null;
+    }
     
     // Needed by markers
     this.isLive = true;
@@ -834,8 +877,8 @@ export class AirspaceSimulator {
       flightNumber: f.flightNumber,
       airlineName: f.airline?.name || "Inconnu",
       aircraftModel: f.aircraftModel || "Inconnu",
-      origin: f.origin?.code || "???",
-      destination: f.destination?.code || "???",
+      origin: f.origin?.code || "N/A",
+      destination: f.destination?.code || "N/A",
       altitudeM: f.altitudeM || 0,
       speedKts: f.speed || 0,
       time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
@@ -854,8 +897,8 @@ export class AirspaceSimulator {
           flightNumber: f.flightNumber,
           airlineName: f.airline?.name || "Inconnu",
           aircraftModel: f.aircraftModel || "Inconnu",
-          origin: f.origin?.code || "???",
-          destination: f.destination?.code || "???",
+          origin: f.origin?.code || "N/A",
+          destination: f.destination?.code || "N/A",
           type: f.emergencyType,
           message: "⚠️ " + f.flightNumber + " (" + (f.airline?.name || f.icao24) + ") : " + f.emergencyType + " — Alt: " + f.altitudeM + "m",
           timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),

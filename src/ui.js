@@ -5,61 +5,372 @@
 import { AIRPORTS } from './simulation.js';
 import { fetchAirportWeather, windDirToCompass } from './weather.js';
 
-// Planespotters photo cache
-const aircraftPhotoCache = new Map();
+// ==========================================================================
+// AIRCRAFT PHOTO & LIVERY DATABASE (Curated offline-ready HD + Dynamic)
+// ==========================================================================
+const AIRCRAFT_GALLERY = {
+  afr_a320: {
+    file: './aircraft/afr_a320.jpg',
+    model: 'Airbus A320',
+    airline: 'Air France',
+    photographer: 'Riik@mctr',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Airbus_A320_F-GKXS_of_Air_France_0.jpg',
+    tag: 'LIVRÉE AIR FRANCE'
+  },
+  afr_a350: {
+    file: './aircraft/afr_a350.jpg',
+    model: 'Airbus A350-900',
+    airline: 'Air France',
+    photographer: 'Anna Zvereva',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Air_France,_F-HTYS,_Airbus_A350-941_(54008313536).jpg',
+    tag: 'LIVRÉE AIR FRANCE'
+  },
+  afr_b777: {
+    file: './aircraft/afr_b777.jpg',
+    model: 'Boeing 777-300ER',
+    airline: 'Air France',
+    photographer: 'Maxime ✈',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Boeing_777-300ER_(Air_France)_(26115950534).jpg',
+    tag: 'LIVRÉE AIR FRANCE'
+  },
+  afr_a220: {
+    file: './aircraft/afr_a220.jpg',
+    model: 'Airbus A220-300',
+    airline: 'Air France',
+    photographer: 'Simon Butler',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:AIR_FRANCE_AIRBUS_A220-300_F-HZUS_(54119847928).jpg',
+    tag: 'LIVRÉE AIR FRANCE'
+  },
+  ezy_a320: {
+    file: './aircraft/ezy_a320.jpg',
+    model: 'Airbus A320',
+    airline: 'EasyJet',
+    photographer: 'Robbie Klinkenberg',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:EasyJet_Europe_Airbus_A320_OE-IJG_at_Schiphol_27-08-2021.jpg',
+    tag: 'LIVRÉE EASYJET'
+  },
+  ryr_b738: {
+    file: './aircraft/ryr_b738.jpg',
+    model: 'Boeing 737-800',
+    airline: 'Ryanair',
+    photographer: 'Ralf Roletschek',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:16-09-01-R%C4%ABgas_Starptautisk%C4%81_Lidosta-RR2_4578.jpg',
+    tag: 'LIVRÉE RYANAIR'
+  },
+  tvf_b738: {
+    file: './aircraft/tvf_b738.jpg',
+    model: 'Boeing 737-800',
+    airline: 'Transavia France',
+    photographer: 'Spotting973',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Boeing_737-8K2_Transavia_F-GZHS_(23035101549).jpg',
+    tag: 'LIVRÉE TRANSAVIA'
+  },
+  dlh_a320: {
+    file: './aircraft/dlh_a320.jpg',
+    model: 'Airbus A320',
+    airline: 'Lufthansa',
+    photographer: 'Raimond Spekking',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Lufthansa_-_Airbus_A320-200_-_Frankfurt_am_Main_-_D-AIUG-0330.jpg',
+    tag: 'LIVRÉE LUFTHANSA'
+  },
+  baw_b787: {
+    file: './aircraft/baw_b787.jpg',
+    model: 'Boeing 787-9',
+    airline: 'British Airways',
+    photographer: 'Anna Zvereva',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:British_Airways,_G-ZBJH,_Boeing_787-8_Dreamliner.jpg',
+    tag: 'LIVRÉE BRITISH AIRWAYS'
+  },
+  baw_a320: {
+    file: './aircraft/baw_a320.jpg',
+    model: 'Airbus A320',
+    airline: 'British Airways',
+    photographer: 'Juergen Lehle',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:British_Airways_A320-100_G-BUSB.jpg',
+    tag: 'LIVRÉE BRITISH AIRWAYS'
+  },
+  uae_a380: {
+    file: './aircraft/uae_a380.jpg',
+    model: 'Airbus A380-800',
+    airline: 'Emirates',
+    photographer: 'Julian Herzog',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Emirates_Airbus_A380-861_A6-EER_MUC_2015_04.jpg',
+    tag: 'LIVRÉE EMIRATES'
+  },
+  klm_b738: {
+    file: './aircraft/klm_b738.jpg',
+    model: 'Boeing 737-800',
+    airline: 'KLM Royal Dutch',
+    photographer: 'Julian Herzog',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:KLM_Boeing_737-7K2_PH-BGT_MUC_2015_01.jpg',
+    tag: 'LIVRÉE KLM'
+  },
+  dal_a350: {
+    file: './aircraft/dal_a350.jpg',
+    model: 'Airbus A350-900',
+    airline: 'Delta Air Lines',
+    photographer: 'Spotter',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Delta%27s_first_A350_(36267955141).jpg',
+    tag: 'LIVRÉE DELTA'
+  },
+  vlg_a320: {
+    file: './aircraft/vlg_a320.jpg',
+    model: 'Airbus A320',
+    airline: 'Vueling',
+    photographer: 'Pablo Nicolás Taibi Cicare',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Aeropuerto_El_Prat,_Barcelona_(4296897670).jpg',
+    tag: 'LIVRÉE VUELING'
+  },
+  wzz_a321: {
+    file: './aircraft/wzz_a321.jpg',
+    model: 'Airbus A321neo',
+    airline: 'Wizz Air',
+    photographer: 'Raimond Spekking',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Wizz_Air_-_HA-LXN_-_Airbus_A321_-_Frankfurt-Hahn_Airport-0316.jpg',
+    tag: 'LIVRÉE WIZZ AIR'
+  },
+  ga_dr400: {
+    file: './aircraft/ga_dr400.jpg',
+    model: 'Robin DR400 Major',
+    airline: 'Aviation Générale',
+    photographer: 'Pierre André Leclercq',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Robin_DR400_at_Lille_-_Marcq-en-Bar%C5%93ul_Airport.jpg',
+    tag: 'AÉROCLUB / LÉGER'
+  },
+  ga_c172: {
+    file: './aircraft/ga_c172.jpg',
+    model: 'Cessna 172 Skyhawk',
+    airline: 'Aviation Générale',
+    photographer: 'Cjp24',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Cessna_172_Skyhawk_II,_F-BXZQ,_in_flight.jpg',
+    tag: 'AVIATION GÉNÉRALE'
+  },
+  heli_samu: {
+    file: './aircraft/heli_samu.jpg',
+    model: 'Eurocopter EC145 SAMU',
+    airline: 'SAMU Secours Médical',
+    photographer: 'Daxipedia',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Eurocopter_EC145_F-HSOX_-_SAMU_64.jpg',
+    tag: 'SECOURS SAMU'
+  },
+  heli_dragon: {
+    file: './aircraft/heli_dragon.jpg',
+    model: 'Eurocopter EC145 Dragon',
+    airline: 'Sécurité Civile',
+    photographer: 'Maxime ✈',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:F-ZBQG_(16935859366).jpg',
+    tag: 'SÉCURITÉ CIVILE'
+  },
+  mil_rafale: {
+    file: './aircraft/mil_rafale.jpg',
+    model: 'Dassault Rafale C',
+    airline: 'Armée de l\'Air et de l\'Espace',
+    photographer: 'Ank Kumar',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:%27113-GU%27_French_Air_Force_Dassault_Rafale_C_with_afterburners_at_Air14,_Payerne,_Switzerland_(Ank_Kumar)_04.jpg',
+    tag: 'CHASSE MILITAIRE'
+  },
+  mil_m2000: {
+    file: './aircraft/mil_m2000.jpg',
+    model: 'Dassault Mirage 2000-5',
+    airline: 'Armée de l\'Air et de l\'Espace',
+    photographer: 'U.S. Navy / Paul Farley',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Dassault_Mirage_2000-5_participating_in_Odyssey_Dawn.jpg',
+    tag: 'CHASSE MILITAIRE'
+  },
+  mil_a400m: {
+    file: './aircraft/mil_a400m.jpg',
+    model: 'Airbus A400M Atlas',
+    airline: 'Armée de l\'Air et de l\'Espace',
+    photographer: 'U.S. Air Force / Tech. Sgt.',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:French_Air_Force_arrive_in_Airbus_A400M_Atlas_(6268165).jpg',
+    tag: 'TRANSPORT MILITAIRE'
+  },
+  vip_fa7x: {
+    file: './aircraft/vip_fa7x.jpg',
+    model: 'Dassault Falcon 7X',
+    airline: 'République Française (COTAM)',
+    photographer: 'Alexandre Prévot',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Dassault_Falcon_7X_R%C3%A9publique_Fran%C3%A7aise_(4155964002).jpg',
+    tag: 'VOL OFFICIEL / VIP'
+  },
+  vip_glf6: {
+    file: './aircraft/vip_glf6.jpg',
+    model: 'Gulfstream G650ER',
+    airline: 'Aviation d\'Affaires',
+    photographer: 'Adrian Pingstone',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Gulfstream_G650_departs_Bristol_23rdAug2014_arp.jpg',
+    tag: 'AVIATION D\'AFFAIRES'
+  }
+};
 
-async function fetchPlanespottersPhoto(flight) {
-  const hex = (flight.icao24 || flight.hex || '').toLowerCase().trim();
+/**
+ * Resolves a curated, verified high-resolution photograph instantly (0ms latency).
+ */
+export function resolveCuratedAircraftPhoto(flight) {
+  const airlineCode = (flight.airline?.code || '').toUpperCase();
+  const airlineName = (flight.airline?.name || '').toUpperCase();
+  const callsign = (flight.flightNumber || flight.callsign || '').toUpperCase();
+  const model = ((flight.aircraftModel || '') + ' ' + (flight.t || '') + ' ' + (flight.desc || '')).toUpperCase();
+  const category = (flight.category || '').toUpperCase();
+
+  // 1. Helicopters / Emergency Rescue
+  if (callsign.includes('DRAGON') || callsign.includes('SECURITE CIVILE')) {
+    return { ...AIRCRAFT_GALLERY.heli_dragon, tag: 'SÉCURITÉ CIVILE' };
+  }
+  if (callsign.includes('SAMU') || callsign.includes('SMU') || airlineCode === 'SMU') {
+    return { ...AIRCRAFT_GALLERY.heli_samu, tag: 'SECOURS SAMU' };
+  }
+  if (category === 'HELI' || model.includes('H145') || model.includes('EC145') || model.includes('H135') || model.includes('EC135') || model.includes('AS350')) {
+    return { ...AIRCRAFT_GALLERY.heli_samu, tag: 'HÉLICOPTÈRE' };
+  }
+
+  // 2. Military
+  if (category === 'MILITARY' || callsign.startsWith('FAF') || callsign.startsWith('CTM') || callsign.startsWith('NATO') || callsign.startsWith('RFAL')) {
+    if (model.includes('M2000') || model.includes('MIR2') || callsign.startsWith('M2K')) {
+      return { ...AIRCRAFT_GALLERY.mil_m2000, tag: 'CHASSE MILITAIRE' };
+    }
+    if (model.includes('A400') || model.includes('C130') || model.includes('C160')) {
+      return { ...AIRCRAFT_GALLERY.mil_a400m, tag: 'TRANSPORT MILITAIRE' };
+    }
+    return { ...AIRCRAFT_GALLERY.mil_rafale, tag: 'CHASSE MILITAIRE' };
+  }
+  if (model.includes('RAFALE') || model.includes('RFAL')) {
+    return { ...AIRCRAFT_GALLERY.mil_rafale, tag: 'CHASSE MILITAIRE' };
+  }
+
+  // 3. VIP / Official / Business Jets
+  if (callsign.includes('COTAM') || callsign.includes('CTM01') || callsign.includes('CTM0001') || callsign.includes('REPUBLIQUE') || model.includes('FA7X') || model.includes('FA8X') || model.includes('F900')) {
+    return { ...AIRCRAFT_GALLERY.vip_fa7x, tag: 'VOL OFFICIEL / VIP' };
+  }
+  if (category === 'PRIVATE' || model.includes('GLF') || model.includes('G650') || model.includes('G550') || model.includes('GLOBAL') || model.includes('CITATION')) {
+    return { ...AIRCRAFT_GALLERY.vip_glf6, tag: 'AVIATION D\'AFFAIRES' };
+  }
+
+  // 4. Light Aviation / Aéroclubs
+  if (model.includes('DR40') || model.includes('ROBIN') || callsign.startsWith('F-H') || callsign.startsWith('F-G')) {
+    if (model.includes('C172') || model.includes('CESSNA') || model.includes('PA28') || model.includes('ARCHER')) {
+      return { ...AIRCRAFT_GALLERY.ga_c172, tag: 'AVIATION GÉNÉRALE' };
+    }
+    return { ...AIRCRAFT_GALLERY.ga_dr400, tag: 'AÉROCLUB / LÉGER' };
+  }
+  if (model.includes('C172') || model.includes('CESSNA') || model.includes('PA28') || model.includes('DA42')) {
+    return { ...AIRCRAFT_GALLERY.ga_c172, tag: 'AVIATION GÉNÉRALE' };
+  }
+
+  // 5. Commercial Airlines Specific Liveries
+  if (airlineCode === 'AFR' || airlineCode === 'AF' || airlineName.includes('AIR FRANCE') || callsign.startsWith('AFR') || callsign.startsWith('AF')) {
+    if (model.includes('350') || model.includes('A359') || model.includes('A35K')) return { ...AIRCRAFT_GALLERY.afr_a350, tag: 'LIVRÉE AIR FRANCE' };
+    if (model.includes('777') || model.includes('B77') || model.includes('77W')) return { ...AIRCRAFT_GALLERY.afr_b777, tag: 'LIVRÉE AIR FRANCE' };
+    if (model.includes('220') || model.includes('BCS3') || model.includes('A220')) return { ...AIRCRAFT_GALLERY.afr_a220, tag: 'LIVRÉE AIR FRANCE' };
+    return { ...AIRCRAFT_GALLERY.afr_a320, tag: 'LIVRÉE AIR FRANCE' };
+  }
+
+  if (airlineCode === 'EZY' || airlineCode === 'EZ' || airlineCode === 'U2' || airlineCode === 'EJU' || airlineCode === 'EZS' || airlineName.includes('EASYJET') || callsign.startsWith('EZY')) {
+    return { ...AIRCRAFT_GALLERY.ezy_a320, tag: 'LIVRÉE EASYJET' };
+  }
+
+  if (airlineCode === 'RYR' || airlineCode === 'FR' || airlineCode === 'RYS' || airlineName.includes('RYANAIR') || callsign.startsWith('RYR')) {
+    return { ...AIRCRAFT_GALLERY.ryr_b738, tag: 'LIVRÉE RYANAIR' };
+  }
+
+  if (airlineCode === 'TVF' || airlineCode === 'TO' || airlineCode === 'TRA' || airlineCode === 'HV' || airlineName.includes('TRANSAVIA') || callsign.startsWith('TVF')) {
+    return { ...AIRCRAFT_GALLERY.tvf_b738, tag: 'LIVRÉE TRANSAVIA' };
+  }
+
+  if (airlineCode === 'DLH' || airlineCode === 'LH' || airlineName.includes('LUFTHANSA') || callsign.startsWith('DLH')) {
+    return { ...AIRCRAFT_GALLERY.dlh_a320, tag: 'LIVRÉE LUFTHANSA' };
+  }
+
+  if (airlineCode === 'BAW' || airlineCode === 'BA' || airlineName.includes('BRITISH') || callsign.startsWith('BAW')) {
+    if (model.includes('787') || model.includes('B78')) return { ...AIRCRAFT_GALLERY.baw_b787, tag: 'LIVRÉE BRITISH AIRWAYS' };
+    return { ...AIRCRAFT_GALLERY.baw_a320, tag: 'LIVRÉE BRITISH AIRWAYS' };
+  }
+
+  if (airlineCode === 'UAE' || airlineCode === 'EK' || airlineName.includes('EMIRATES') || callsign.startsWith('UAE')) {
+    return { ...AIRCRAFT_GALLERY.uae_a380, tag: 'LIVRÉE EMIRATES' };
+  }
+
+  if (airlineCode === 'KLM' || airlineCode === 'KL' || airlineName.includes('KLM') || callsign.startsWith('KLM')) {
+    return { ...AIRCRAFT_GALLERY.klm_b738, tag: 'LIVRÉE KLM' };
+  }
+
+  if (airlineCode === 'DAL' || airlineCode === 'DL' || airlineName.includes('DELTA') || callsign.startsWith('DAL')) {
+    return { ...AIRCRAFT_GALLERY.dal_a350, tag: 'LIVRÉE DELTA' };
+  }
+
+  if (airlineCode === 'VLG' || airlineCode === 'VY' || airlineName.includes('VUELING') || callsign.startsWith('VLG')) {
+    return { ...AIRCRAFT_GALLERY.vlg_a320, tag: 'LIVRÉE VUELING' };
+  }
+
+  if (airlineCode === 'WZZ' || airlineCode === 'W6' || airlineName.includes('WIZZ') || callsign.startsWith('WZZ')) {
+    return { ...AIRCRAFT_GALLERY.wzz_a321, tag: 'LIVRÉE WIZZ AIR' };
+  }
+
+  // 6. Generic commercial models fallback
+  if (model.includes('350') || model.includes('A359')) return { ...AIRCRAFT_GALLERY.afr_a350, tag: 'AIRBUS A350' };
+  if (model.includes('777') || model.includes('B77')) return { ...AIRCRAFT_GALLERY.afr_b777, tag: 'BOEING 777' };
+  if (model.includes('787') || model.includes('B78')) return { ...AIRCRAFT_GALLERY.baw_b787, tag: 'BOEING 787' };
+  if (model.includes('380') || model.includes('A388')) return { ...AIRCRAFT_GALLERY.uae_a380, tag: 'AIRBUS A380' };
+  if (model.includes('737') || model.includes('738') || model.includes('B738') || model.includes('B38M')) return { ...AIRCRAFT_GALLERY.ryr_b738, tag: 'BOEING 737' };
+  if (model.includes('320') || model.includes('321') || model.includes('A20N') || model.includes('A21N')) return { ...AIRCRAFT_GALLERY.afr_a320, tag: 'AIRBUS A320' };
+
+  // 7. Ultimate fallback
+  return { ...AIRCRAFT_GALLERY.afr_a320, tag: 'PHOTO APPAREIL' };
+}
+
+// Dynamic Wikimedia search cache
+const dynamicPhotoCache = new Map();
+
+/**
+ * Optional background upgrade: attempts to query Wikimedia Commons for an exact aircraft tail/registration.
+ */
+async function fetchDynamicAircraftPhoto(flight) {
   const reg = (flight.registration || flight.r || '').trim();
-  const cacheKey = hex || reg;
+  const airlineName = flight.airline?.name || '';
+  const model = flight.aircraftModel || flight.t || '';
+  const cacheKey = (reg || `${airlineName}_${model}`).toLowerCase();
+  
   if (!cacheKey) return null;
+  if (dynamicPhotoCache.has(cacheKey)) return dynamicPhotoCache.get(cacheKey);
 
-  if (aircraftPhotoCache.has(cacheKey)) {
-    return aircraftPhotoCache.get(cacheKey);
+  // If already a well-covered top airline without a specific tail registration, stick with curated HD
+  const isTopAirline = ['Air France', 'EasyJet', 'Ryanair', 'Transavia France', 'Lufthansa', 'British Airways', 'Emirates', 'KLM Royal Dutch', 'Delta Air Lines', 'Vueling', 'Wizz Air'].includes(airlineName);
+  if (isTopAirline && !reg) {
+    dynamicPhotoCache.set(cacheKey, null);
+    return null;
   }
 
   try {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const subpath = hex ? `pub/photos/hex/${hex}` : `pub/photos/reg/${encodeURIComponent(reg)}`;
-    const directUrl = `https://api.planespotters.net/${subpath}`;
-    
-    // Choose primary URL: Vite proxy if on localhost, else CORS proxy
-    const primaryUrl = isDev ? `/api-planespotters/${subpath}` : `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
-    
-    let res = null;
-    try {
-      res = await fetch(primaryUrl, { signal: AbortSignal.timeout(5000) });
-    } catch (_) {
-      // Fallback to secondary CORS proxy if primary fails
-      const fallbackUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
-      res = await fetch(fallbackUrl, { signal: AbortSignal.timeout(5000) });
-    }
+    const searchTerm = reg ? `${reg} aircraft` : `${airlineName} ${model}`.trim();
+    if (searchTerm.length < 4) return null;
 
-    if (!res || !res.ok) {
-      aircraftPhotoCache.set(cacheKey, null);
+    const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(searchTerm)}&gsrlimit=3&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=720&format=json&origin=*`;
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(2200) });
+    if (!res.ok) {
+      dynamicPhotoCache.set(cacheKey, null);
       return null;
     }
-
-
     const data = await res.json();
-    const photos = data.photos || [];
-    if (photos.length > 0) {
-      const p = photos[0];
+    const pages = Object.values(data.query?.pages || {});
+    const match = pages.find(p => p.title && p.title.match(/\.(jpg|jpeg|png)$/i) && p.imageinfo?.[0]?.thumburl);
+    if (match) {
+      const info = match.imageinfo[0];
+      let artist = (info.extmetadata?.Artist?.value || 'Wikimedia Spotter').replace(/<[^>]+>/g, '').trim();
       const photoInfo = {
-        thumbnail: p.thumbnail?.src || p.thumbnail_large?.src,
-        full: p.thumbnail_large?.src || p.thumbnail?.src,
-        photographer: p.photographer || 'Spotter',
-        link: p.link || `https://www.planespotters.net`
+        file: info.thumburl,
+        photographer: artist.slice(0, 35) || 'Spotter',
+        sourceUrl: info.descriptionurl || 'https://commons.wikimedia.org',
+        tag: 'PHOTO SPOTTER'
       };
-      aircraftPhotoCache.set(cacheKey, photoInfo);
+      dynamicPhotoCache.set(cacheKey, photoInfo);
       return photoInfo;
     }
-    aircraftPhotoCache.set(cacheKey, null);
-    return null;
-  } catch (err) {
-    aircraftPhotoCache.set(cacheKey, null);
-    return null;
+  } catch (_) {
+    // Silent fallback to curated photo
   }
+
+  dynamicPhotoCache.set(cacheKey, null);
+  return null;
 }
 
 export class UIController {
@@ -433,37 +744,56 @@ export class UIController {
     document.getElementById('det-airline-name').innerText = flight.airline?.name || 'Compagnie inconnue';
     document.getElementById('det-flight-category').innerText = flight.category || 'CIVIL';
 
-    // Real Aircraft Photo (Planespotters.net API)
+    // Real Aircraft Photo (Curated HD Livery + Dynamic Spotter Upgrade)
     const photoWrap = document.getElementById('det-aircraft-photo-wrap');
     const photoImg = document.getElementById('det-aircraft-photo');
     const photoLoading = document.getElementById('det-aircraft-photo-loading');
     const photoCredit = document.getElementById('det-aircraft-credit');
+    const photoTag = document.getElementById('det-photo-tag');
 
     if (photoWrap) {
       const currentFlightId = flight.id;
       if (photoWrap._currentFlightId !== currentFlightId) {
         photoWrap._currentFlightId = currentFlightId;
         photoWrap.classList.remove('hidden');
-        photoLoading.classList.remove('hidden');
-        photoImg.classList.add('hidden');
-        if (photoCredit) photoCredit.innerHTML = '';
 
-        fetchPlanespottersPhoto(flight).then(photoInfo => {
-          if (this.appState.selectedFlight?.id !== currentFlightId) return;
+        // 1. Instantly display curated authentic livery photo (0ms latency, guaranteed)
+        const curated = resolveCuratedAircraftPhoto(flight);
+        photoImg.src = curated.file;
+        photoImg.alt = `${curated.model} - ${curated.airline}`;
+        photoImg.classList.remove('hidden');
+        if (photoLoading) photoLoading.classList.add('hidden');
 
-          photoLoading.classList.add('hidden');
-          if (photoInfo && (photoInfo.full || photoInfo.thumbnail)) {
-            photoImg.src = photoInfo.full || photoInfo.thumbnail;
-            photoImg.classList.remove('hidden');
-            if (photoCredit) {
-              photoCredit.innerHTML = `<a href="${photoInfo.link}" target="_blank" rel="noopener">© ${photoInfo.photographer}</a>`;
-            }
-            photoWrap.classList.remove('hidden');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-          } else {
-            // No photo found for this hex/reg
-            photoWrap.classList.add('hidden');
+        if (photoCredit) {
+          photoCredit.innerHTML = `<a href="${curated.sourceUrl}" target="_blank" rel="noopener">© ${curated.photographer}</a>`;
+        }
+        if (photoTag) {
+          photoTag.innerHTML = `<i data-lucide="camera"></i> ${curated.tag}`;
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Safety fallback if an image fails to load
+        photoImg.onerror = () => {
+          if (photoImg.src !== curated.file) {
+            photoImg.src = curated.file;
           }
+        };
+
+        // 2. Asynchronous background upgrade: try Wikimedia Commons for exact registration
+        fetchDynamicAircraftPhoto(flight).then(dynamicPhoto => {
+          if (photoWrap._currentFlightId !== currentFlightId) return;
+          if (dynamicPhoto && dynamicPhoto.file) {
+            photoImg.src = dynamicPhoto.file;
+            if (photoCredit) {
+              photoCredit.innerHTML = `<a href="${dynamicPhoto.sourceUrl}" target="_blank" rel="noopener">© ${dynamicPhoto.photographer}</a>`;
+            }
+            if (photoTag) {
+              photoTag.innerHTML = `<i data-lucide="aperture"></i> ${dynamicPhoto.tag}`;
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+        }).catch(() => {
+          // Curated photo is already active and displayed
         });
       }
     }

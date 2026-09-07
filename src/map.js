@@ -136,6 +136,8 @@ export class MapController {
 
       this.rainRadarLayer = L.tileLayer(`${host}${latestPath}/256/{z}/{x}/{y}/2/1_1.png`, {
         opacity: 0.65,
+        maxNativeZoom: 7,
+        maxZoom: 18,
         zIndex: 400,
         attribution: 'RainViewer'
       }).addTo(this.map);

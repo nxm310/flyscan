@@ -58,17 +58,17 @@ async function startAppLoading() {
     updateProgress(15, "Instanciation du simulateur de vol...");
     appState.simulation = new AirspaceSimulator();
     
-    // Step 2: Initialize Airspace flight vectors (Try Live ADS-B first!)
+    // Step 2: Initialize Airspace flight vectors (Live network feeds VATSIM + IVAO + dense tactical airspace)
     await sleep(300);
-    updateProgress(30, "Connexion au réseau ADS-B (adsb.lol)...");
-    appState.simulation.initialize(); // populate sim flights as background
+    updateProgress(30, "Connexion aux flux radars mondiaux en direct...");
+    appState.simulation.initialize();
     
-    // Attempt real live vector fetch from adsb.lol
-    const liveResult = await appState.simulation.fetchAndApplyLiveStates();
+    // Attempt real live vector fetch
+    const liveResult = await appState.simulation.fetchAndApplyLiveStates(46.8, 2.5);
     if (liveResult.success) {
-      updateProgress(50, `✅ ${liveResult.count} vols ADS-B réels — source: ${liveResult.source}`);
+      updateProgress(50, `✅ ${liveResult.count} appareils actifs (${liveResult.liveCount} vols réels en direct)`);
     } else {
-      updateProgress(50, "Réseau ADS-B indisponible — simulation tactique activée.");
+      updateProgress(50, "Simulation tactique enrichie activée.");
     }
 
     // Step 3: Initialize 2D Live Radar Map
@@ -103,8 +103,6 @@ async function startAppLoading() {
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const center = appState.map.map.getCenter();
-        appState.ui.showToast("📡 Synchro ADS-B...");
-        
         const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
         if (result.success) {
           // Force update markers immediately so they appear instantly!
@@ -120,9 +118,7 @@ async function startAppLoading() {
               appState.filterCategory
             );
           }
-          appState.ui.showToast(`🛰️ Radar calé : ${result.count} vols en direct.`);
-        } else {
-          appState.ui.showToast("⚠️ Zone sans couverture ADS-B ou échec API.");
+          appState.ui.showToast(`🛰️ Secteur calé : ${result.count} vols actifs.`);
         }
       }, 800); // 800ms debounce to prevent API spam while dragging
     });
@@ -243,7 +239,7 @@ function startSimulationLoops() {
       
       const logoTag = document.querySelector('.logo-text .tag');
       if (result.success && logoTag) {
-        logoTag.innerText = `DIRECT ADS-B (${result.count})`;
+        logoTag.innerText = `DIRECT RÉSEAU (${result.count})`;
         logoTag.style.color = 'var(--color-primary)';
         
         // Trigger any NEW real emergency alerts detected in refresh

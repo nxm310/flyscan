@@ -91,7 +91,12 @@ export class UIController {
         
         const filter = btn.getAttribute('data-filter');
         this.appState.filterCategory = filter;
-        this.appState.map.updateMarkers(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
+        const visible = this.appState.map.updateMarkers(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
+        const activeEl = document.getElementById('stat-active-flights');
+        if (activeEl) activeEl.innerText = visible.length;
+        const squawkEl = document.getElementById('stat-active-squawks');
+        if (squawkEl) squawkEl.innerText = visible.filter(f => f.isEmergency).length;
+
         if (this.appState.radar3d && this.appState.radar3d.isActive) {
           this.appState.radar3d.update3DAirspace(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
         }
@@ -584,10 +589,25 @@ export class UIController {
     const listEl = document.getElementById('alerts-list');
     listEl.innerHTML = '';
 
-    const alerts = this.appState.simulation.alerts;
+    // Filter alerts to only those whose flight is visible within the map zoom bounds
+    const alerts = this.appState.simulation.alerts.filter(alt => {
+      const flight = this.appState.simulation.flights.find(f => f.id === alt.flightId);
+      return flight && this.appState.map && this.appState.map.isFlightInView(flight);
+    });
+
+    // Keep badge synchronized with visible alerts
+    const badge = document.getElementById('alerts-badge');
+    if (badge) {
+      badge.innerText = alerts.length;
+      if (alerts.length > 0) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
 
     if (alerts.length === 0) {
-      listEl.innerHTML = '<div class="no-alerts">Aucune alerte active dans le secteur.</div>';
+      listEl.innerHTML = '<div class="no-alerts">Aucune alerte active dans le secteur affiché.</div>';
       return;
     }
 
@@ -916,37 +936,41 @@ export class UIController {
   renderTacticalAlertsPanel() {
     const bodyEl = document.getElementById('bottom-panel-content');
     
-    // Count stats
-    const totalFlights = this.appState.simulation.flights.length;
-    const milCount = this.appState.simulation.flights.filter(f => f.category === 'MILITARY').length;
-    const prvCount = this.appState.simulation.flights.filter(f => f.category === 'PRIVATE').length;
-    const emgCount = this.appState.simulation.activeSquawks;
+    // Count stats strictly for flights currently in visible zoom bounds
+    const visibleFlights = this.appState.map 
+      ? this.appState.map.getVisibleFlights(this.appState.simulation.flights, 'all') 
+      : this.appState.simulation.flights;
+
+    const totalFlights = visibleFlights.length;
+    const milCount = visibleFlights.filter(f => f.category === 'MILITARY').length;
+    const prvCount = visibleFlights.filter(f => f.category === 'PRIVATE').length;
+    const emgCount = visibleFlights.filter(f => f.isEmergency).length;
 
     bodyEl.innerHTML = `
       <div class="tactical-grid">
         <div class="tactical-card">
-          <h4>Vecteurs Militaires Actifs</h4>
+          <h4>Vecteurs Militaires Visibles</h4>
           <div class="tactical-metric">
             <span class="val" style="color: var(--color-accent-military)">${milCount}</span>
             <span class="lbl">Unités en patrouille</span>
           </div>
-          <p style="font-size:0.75rem;color:var(--color-text-secondary)">Surveillance radar active. Indicatifs tactiques COTAM et REACH opérationnels.</p>
+          <p style="font-size:0.75rem;color:var(--color-text-secondary)">Surveillance radar active sur le secteur affiché (${totalFlights} vols au zoom).</p>
         </div>
         <div class="tactical-card emg">
           <h4>Détresses Transpondeurs</h4>
           <div class="tactical-metric">
             <span class="val">${emgCount}</span>
-            <span class="lbl">Urgence(s)</span>
+            <span class="lbl">Urgence(s) à l'écran</span>
           </div>
           <p style="font-size:0.75rem;color:var(--color-text-secondary)">Surveillance prioritaire du code Squawk 7700 (détresse) et 7600 (perte radio).</p>
         </div>
         <div class="tactical-card">
-          <h4>Vols VIP / d'Affaires</h4>
+          <h4>Vols VIP / d'Affaires Visibles</h4>
           <div class="tactical-metric">
             <span class="val" style="color: var(--color-accent-private)">${prvCount}</span>
             <span class="lbl">Jets privés</span>
           </div>
-          <p style="font-size:0.75rem;color:var(--color-text-secondary)">Liaisons privées actives. Opérateurs principaux : NetJets et Flexjet.</p>
+          <p style="font-size:0.75rem;color:var(--color-text-secondary)">Liaisons privées actives dans le champ de zoom.</p>
         </div>
       </div>
     `;
@@ -954,6 +978,12 @@ export class UIController {
 
   // --- Real-time Notifications & Alerts System ---
   triggerSquawkToast(alert) {
+    // Technical alarms ONLY trigger if aircraft is inside current zoom view!
+    const flight = this.appState.simulation.flights.find(f => f.id === alert.flightId);
+    if (flight && this.appState.map && !this.appState.map.isFlightInView(flight)) {
+      return;
+    }
+
     // Show Top Emergency Banner
     const banner = document.getElementById('emergency-banner');
     const textEl = document.getElementById('emergency-text');
@@ -961,11 +991,19 @@ export class UIController {
     textEl.innerText = alert.message;
     banner.classList.remove('hidden');
 
-    // Highlight alert button badge
+    // Highlight alert button badge for visible alerts only
     const badge = document.getElementById('alerts-badge');
-    const badgeCount = this.appState.simulation.alerts.length;
+    const visibleAlerts = this.appState.simulation.alerts.filter(alt => {
+      const fl = this.appState.simulation.flights.find(f => f.id === alt.flightId);
+      return fl && this.appState.map && this.appState.map.isFlightInView(fl);
+    });
+    const badgeCount = visibleAlerts.length;
     badge.innerText = badgeCount;
-    badge.classList.remove('hidden');
+    if (badgeCount > 0) {
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
 
     // Play a subtle neon blinking effect on alerts bell icon
     const bellBtn = document.getElementById('alerts-toggle-btn');

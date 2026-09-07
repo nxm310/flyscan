@@ -201,16 +201,34 @@ export class MapController {
     });
   }
 
+  isFlightInView(flight) {
+    if (!this.map || !flight) return false;
+    const bounds = this.map.getBounds ? this.map.getBounds() : null;
+    return bounds ? bounds.contains([flight.lat, flight.lng]) : true;
+  }
+
+  getVisibleFlights(flights, filterCategory = 'all') {
+    if (!this.map || !flights) return [];
+    const bounds = this.map.getBounds ? this.map.getBounds().pad(0.06) : null;
+    return flights.filter(f => 
+      (!bounds || bounds.contains([f.lat, f.lng])) && 
+      checkFlightFilterMatch(f, filterCategory)
+    );
+  }
+
   updateMarkers(flights, selectedFlightId, filterCategory = 'all') {
+    if (!this.map) return [];
+
+    // Visible map bounding box with slight 6% padding to avoid abrupt clipping at screen borders
+    const bounds = this.map.getBounds ? this.map.getBounds().pad(0.06) : null;
+
     const activeIds = new Set();
+    const visibleFlights = [];
 
     flights.forEach(f => {
-      // Check category filters (including advanced tactical filters: heavy, heli, vip, military, civil, private)
+      // 1. Check category filters (heavy, heli, vip, military, civil, private)
       const matchesFilter = checkFlightFilterMatch(f, filterCategory);
-
-
       if (!matchesFilter) {
-        // If marker exists but category filtered out, remove it
         if (this.markers.has(f.id)) {
           this.map.removeLayer(this.markers.get(f.id));
           this.markers.delete(f.id);
@@ -218,6 +236,16 @@ export class MapController {
         return;
       }
 
+      // 2. Strict Viewport & Zoom filter: exclude flights outside the visible area
+      if (bounds && !bounds.contains([f.lat, f.lng])) {
+        if (this.markers.has(f.id)) {
+          this.map.removeLayer(this.markers.get(f.id));
+          this.markers.delete(f.id);
+        }
+        return;
+      }
+
+      visibleFlights.push(f);
       activeIds.add(f.id);
       const isSelected = f.id === selectedFlightId;
       const altFt = f.altitude ? Math.round(f.altitude) : 0;
@@ -263,7 +291,7 @@ export class MapController {
       }
     });
 
-    // Remove any markers that are no longer active (safely using Array.from to avoid iterator modification bugs)
+    // Remove any markers that are no longer active/visible
     for (const [id, marker] of Array.from(this.markers.entries())) {
       if (!activeIds.has(id)) {
         this.map.removeLayer(marker);
@@ -273,6 +301,8 @@ export class MapController {
 
     // Update trail polyline
     this.updateTrail(flights.find(f => f.id === selectedFlightId));
+
+    return visibleFlights;
   }
 
   updateTrail(selectedFlight) {

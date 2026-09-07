@@ -742,17 +742,42 @@ export class AirspaceSimulator {
     this.activeSquawks = 0;
     this.mode = 'live';
     this._knownEmergencyIds = new Set();
-    this._cachedLivePilots = [];
-    this._sectorFlights = [];
+    this._livePilotsMap = new Map();
+    this._sectorFlightsMap = new Map();
     this._lastCenter = { lat: 46.8, lng: 2.5 };
   }
 
   initialize() {
-    // Spawn rich initial sector traffic (160 flights) covering all categories
-    this._sectorFlights = this._generateSectorTraffic(this._lastCenter.lat, this._lastCenter.lng, 160);
-    this.flights = [...this._sectorFlights];
+    // Spawn persistent initial sector traffic (160 flights) with permanent stable IDs
+    this._initSectorTraffic(this._lastCenter.lat, this._lastCenter.lng, 160);
+    this._syncFlightsArray();
     this._prepopulateHistory();
     this._updateStats();
+  }
+
+  _initSectorTraffic(centerLat, centerLng, count = 160) {
+    this._sectorFlightsMap.clear();
+    const heavyCount = Math.floor(count * 0.18);
+    const heliCount = Math.floor(count * 0.14);
+    const milCount = Math.floor(count * 0.16);
+    const vipCount = Math.floor(count * 0.10);
+    const civCount = Math.floor(count * 0.34);
+    const genCount = count - (heavyCount + heliCount + milCount + vipCount + civCount);
+
+    let idx = 1;
+    for (let i = 0; i < heavyCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'heavy'));
+    for (let i = 0; i < heliCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'heli'));
+    for (let i = 0; i < milCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'military'));
+    for (let i = 0; i < vipCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'vip'));
+    for (let i = 0; i < civCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'civil'));
+    for (let i = 0; i < genCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'general'));
+  }
+
+  _syncFlightsArray() {
+    this.flights = [
+      ...this._livePilotsMap.values(),
+      ...this._sectorFlightsMap.values()
+    ];
   }
 
   _prepopulateHistory() {
@@ -776,6 +801,20 @@ export class AirspaceSimulator {
 
   tick(dt) {
     this.flights.forEach(f => f.tick(dt));
+
+    // Recycle ONLY individual sector flights that reached their destination or flew beyond the active perimeter
+    const center = this._lastCenter;
+    for (const [id, f] of this._sectorFlightsMap.entries()) {
+      const dLat = Math.abs(f.lat - center.lat);
+      const dLng = Math.abs(f.lng - center.lng);
+      if (f.progress >= 1.0 || dLat > 4.5 || dLng > 6.0) {
+        const tmplType = f.fleetType || 'civil';
+        const recycled = new TacticalFlight(id, center.lat, center.lng, tmplType);
+        this._sectorFlightsMap.set(id, recycled);
+      }
+    }
+
+    this._syncFlightsArray();
     this._updateStats();
   }
 
@@ -868,56 +907,19 @@ export class AirspaceSimulator {
   }
 
   // ──────────────────────────────────────────────
-  // Generate dense sector traffic covering "tout ce qui vole"
-  // ──────────────────────────────────────────────
-  _generateSectorTraffic(centerLat, centerLng, targetCount = 140) {
-    const list = [];
-    const heavyCount = Math.max(16, Math.floor(targetCount * 0.18));
-    const heliCount = Math.max(14, Math.floor(targetCount * 0.14));
-    const milCount = Math.max(18, Math.floor(targetCount * 0.16));
-    const vipCount = Math.max(10, Math.floor(targetCount * 0.10));
-    const civCount = Math.max(30, Math.floor(targetCount * 0.34));
-    const genCount = Math.max(8, targetCount - (heavyCount + heliCount + milCount + vipCount + civCount));
-
-    for (let i = 0; i < heavyCount; i++) list.push(new TacticalFlight(`HVY-${Date.now()}-${i}`, centerLat, centerLng, 'heavy'));
-    for (let i = 0; i < heliCount; i++) list.push(new TacticalFlight(`HLI-${Date.now()}-${i}`, centerLat, centerLng, 'heli'));
-    for (let i = 0; i < milCount; i++) list.push(new TacticalFlight(`MIL-${Date.now()}-${i}`, centerLat, centerLng, 'military'));
-    for (let i = 0; i < vipCount; i++) list.push(new TacticalFlight(`VIP-${Date.now()}-${i}`, centerLat, centerLng, 'vip'));
-    for (let i = 0; i < civCount; i++) list.push(new TacticalFlight(`CIV-${Date.now()}-${i}`, centerLat, centerLng, 'civil'));
-    for (let i = 0; i < genCount; i++) list.push(new TacticalFlight(`GEN-${Date.now()}-${i}`, centerLat, centerLng, 'general'));
-
-    return list;
-  }
-
-  // ──────────────────────────────────────────────
-  // Ensure the local sector is bustling with flights
-  // ──────────────────────────────────────────────
-  _ensureSectorDensity(centerLat, centerLng, livePilots) {
-    this._lastCenter = { lat: centerLat, lng: centerLng };
-
-    // Count live flights within ~400 km of current center
-    const sectorLive = livePilots.filter(p => {
-      const dLat = Math.abs(p.lat - centerLat);
-      const dLng = Math.abs(p.lng - centerLng);
-      return dLat < 3.8 && dLng < 4.8;
-    });
-
-    const neededSectorFlights = Math.max(90, 160 - sectorLive.length);
-    this._sectorFlights = this._generateSectorTraffic(centerLat, centerLng, neededSectorFlights);
-
-    // Merge: All worldwide live pilots + active sector flights
-    // Use Map to deduplicate by ID
-    const flightMap = new Map();
-    livePilots.forEach(p => flightMap.set(p.id, p));
-    this._sectorFlights.forEach(s => flightMap.set(s.id, s));
-
-    this.flights = Array.from(flightMap.values());
-  }
-
-  // ──────────────────────────────────────────────
-  // Main public method: fetch live data & apply
+  // Main public method: fetch live data & apply with full persistence
   // ──────────────────────────────────────────────
   async fetchAndApplyLiveStates(lat = 48.85, lng = 2.35) {
+    // Check if map center moved significantly (> 400 km) to repoint sector flights
+    const dLat = Math.abs(lat - this._lastCenter.lat);
+    const dLng = Math.abs(lng - this._lastCenter.lng);
+    const centerMovedFar = dLat > 3.5 || dLng > 5.0;
+    this._lastCenter = { lat, lng };
+
+    if (centerMovedFar || this._sectorFlightsMap.size === 0) {
+      this._initSectorTraffic(lat, lng, 160);
+    }
+
     // 1. Fetch VATSIM & IVAO live feeds in parallel
     const [vatsimRes, ivaoRes] = await Promise.allSettled([
       this._fetchVatsimLive(),
@@ -933,20 +935,45 @@ export class AirspaceSimulator {
     }
 
     if (livePilots.length > 0) {
-      this._cachedLivePilots = livePilots;
+      const currentLiveIds = new Set(livePilots.map(p => p.id));
+
+      // Update existing live pilots IN-PLACE to preserve marker continuity
+      livePilots.forEach(p => {
+        if (this._livePilotsMap.has(p.id)) {
+          const existing = this._livePilotsMap.get(p.id);
+          existing.lat = p.lat;
+          existing.lng = p.lng;
+          existing.altitude = p.altitude;
+          existing.altitudeM = p.altitudeM;
+          existing.speed = p.speed;
+          existing.heading = p.heading;
+          existing.verticalSpeed = p.verticalSpeed;
+          existing.squawk = p.squawk;
+          existing.isEmergency = p.isEmergency;
+          existing.emergencyType = p.emergencyType;
+          if (p.lat && p.lng) {
+            existing.routeHistory.push([p.lat, p.lng]);
+            if (existing.routeHistory.length > 60) existing.routeHistory.shift();
+          }
+        } else {
+          this._livePilotsMap.set(p.id, p);
+        }
+      });
+
+      // Remove disconnected live flights
+      for (const [id] of this._livePilotsMap.entries()) {
+        if (!currentLiveIds.has(id)) {
+          this._livePilotsMap.delete(id);
+        }
+      }
     }
 
-    const availableLive = this._cachedLivePilots.length > 0 ? this._cachedLivePilots : livePilots;
-
-    // Blend live fleet with rich sector generation
-    this._ensureSectorDensity(lat, lng, availableLive);
-
+    this._syncFlightsArray();
     this.mode = 'live';
     this._detectRealEmergencies();
     this._updateStats();
 
-    const liveCount = availableLive.length;
-    console.log(`[FlyRadar Multi-Source] Airspace populated: ${this.flights.length} flights (${liveCount} live online).`);
+    const liveCount = this._livePilotsMap.size;
     return {
       success: true,
       count: this.flights.length,
@@ -989,9 +1016,11 @@ export class AirspaceSimulator {
     }
   }
 
-  // Regenerate airspace around custom position
+  // Regenerate airspace around custom position smoothly
   regenerateAirspaceAround(lat, lng) {
-    this._ensureSectorDensity(lat, lng, this._cachedLivePilots);
+    this._lastCenter = { lat, lng };
+    this._initSectorTraffic(lat, lng, 160);
+    this._syncFlightsArray();
     this.mode = 'live';
     this._updateStats();
   }

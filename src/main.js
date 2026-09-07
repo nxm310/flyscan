@@ -97,20 +97,62 @@ async function startAppLoading() {
     appState.radar3d.init();
 
 
-    // Listen to manual map drags/pans to instantly load live flights for the newly positioned area!
+    // Helper: synchronize visible flight markers, counts, and alerts to the current zoom view
     let moveTimeout = null;
+    const syncVisibleView = () => {
+      if (!appState.map) return;
+      const visible = appState.map.updateMarkers(
+        appState.simulation.flights, 
+        appState.selectedFlight?.id, 
+        appState.filterCategory
+      );
+      const activeEl = document.getElementById('stat-active-flights');
+      if (activeEl) activeEl.innerText = visible.length;
+      const squawkEl = document.getElementById('stat-active-squawks');
+      if (squawkEl) squawkEl.innerText = visible.filter(f => f.isEmergency).length;
+
+      const logoTag = document.querySelector('.logo-text .tag');
+      if (logoTag && appState.simulation.mode === 'live') {
+        logoTag.innerText = `DIRECT RÉSEAU (${visible.length})`;
+      }
+
+      // Update emergency alerts badge count for visible emergencies only
+      const badge = document.getElementById('alerts-badge');
+      if (badge) {
+        const visibleAlerts = appState.simulation.alerts.filter(alt => {
+          const fl = appState.simulation.flights.find(f => f.id === alt.flightId);
+          return fl && appState.map.isFlightInView(fl);
+        });
+        badge.innerText = visibleAlerts.length;
+        if (visibleAlerts.length > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      // If alerts sidebar is open, refresh to visible alerts
+      const alertsSidebar = document.getElementById('alerts-sidebar');
+      if (alertsSidebar && alertsSidebar.classList.contains('open')) {
+        appState.ui.renderAlertsSidebar();
+      }
+
+      // If bottom tactical panel is open, refresh counts
+      const tacticalPanel = document.getElementById('bottom-panel');
+      if (tacticalPanel && tacticalPanel.classList.contains('open') && appState.ui.activeBottomTab === 'tactical') {
+        appState.ui.renderTacticalAlertsPanel();
+      }
+    };
+
+    appState.map.map.on('zoomend', syncVisibleView);
     appState.map.map.on('moveend', () => {
+      syncVisibleView();
       clearTimeout(moveTimeout);
       moveTimeout = setTimeout(async () => {
         const center = appState.map.map.getCenter();
         const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
         if (result.success) {
-          // Force update markers immediately so they appear instantly!
-          appState.map.updateMarkers(
-            appState.simulation.flights, 
-            appState.selectedFlight?.id, 
-            appState.filterCategory
-          );
+          syncVisibleView();
           if (appState.is3DMode && appState.radar3d && appState.radar3d.isActive) {
             appState.radar3d.update3DAirspace(
               appState.simulation.flights, 
@@ -118,7 +160,8 @@ async function startAppLoading() {
               appState.filterCategory
             );
           }
-          appState.ui.showToast(`🛰️ Secteur calé : ${result.count} vols actifs.`);
+          const visibleNow = appState.map.getVisibleFlights(appState.simulation.flights, appState.filterCategory);
+          appState.ui.showToast(`🛰️ Secteur calé : ${visibleNow.length} vols visibles (${result.liveCount} réels).`);
         }
       }, 800); // 800ms debounce to prevent API spam while dragging
     });
@@ -137,23 +180,27 @@ async function startAppLoading() {
     appState.ui.init();
 
     // Render initial flight vectors
-    appState.map.updateMarkers(
+    const initialVisible = appState.map.updateMarkers(
       appState.simulation.flights, 
       null, 
       appState.filterCategory
     );
+    const activeEl = document.getElementById('stat-active-flights');
+    if (activeEl) activeEl.innerText = initialVisible.length;
+    const squawkEl = document.getElementById('stat-active-squawks');
+    if (squawkEl) squawkEl.innerText = initialVisible.filter(f => f.isEmergency).length;
 
     // Step 6: Finalize load and fade splash screen
     await sleep(500);
     const isLive = appState.simulation.mode === 'live';
     updateProgress(100, isLive
-      ? `📡 ${appState.simulation.flights.length} vols ADS-B réels en direct.`
+      ? `📡 ${initialVisible.length} vols visibles en direct.`
       : "🔵 Simulation tactique synchronisée.");
     
     const logoTag = document.querySelector('.logo-text .tag');
     if (logoTag) {
       if (isLive) {
-        logoTag.innerText = `DIRECT ADS-B`;
+        logoTag.innerText = `DIRECT ADS-B (${initialVisible.length})`;
         logoTag.style.color = 'var(--color-primary)';
       } else {
         logoTag.innerText = 'SIMULATION ADS-B';
@@ -165,10 +212,13 @@ async function startAppLoading() {
     splash.classList.add('fade-out');
     setTimeout(() => splash.remove(), 800);
 
-    // Trigger real emergency alerts if any found at startup
+    // Trigger real emergency alerts if any found at startup (only if in visible zoom view)
     if (isLive) {
       appState.simulation.alerts.forEach(alert => {
-        appState.ui.triggerSquawkToast(alert);
+        const flight = appState.simulation.flights.find(f => f.id === alert.flightId);
+        if (flight && appState.map.isFlightInView(flight)) {
+          appState.ui.triggerSquawkToast(alert);
+        }
       });
     }
 
@@ -189,7 +239,7 @@ function startSimulationLoops() {
   setInterval(() => {
     appState.simulation.tick(dt);
     
-    appState.map.updateMarkers(
+    const visibleFlights = appState.map.updateMarkers(
       appState.simulation.flights, 
       appState.selectedFlight?.id, 
       appState.filterCategory
@@ -219,9 +269,11 @@ function startSimulationLoops() {
       }
     }
 
-    // Refresh live statistics overlays
-    document.getElementById('stat-active-flights').innerText = appState.simulation.flights.length;
-    document.getElementById('stat-active-squawks').innerText = appState.simulation.activeSquawks;
+    // Refresh live statistics overlays strictly for aircraft visible in current zoom view
+    const activeEl = document.getElementById('stat-active-flights');
+    if (activeEl) activeEl.innerText = visibleFlights.length;
+    const squawkEl = document.getElementById('stat-active-squawks');
+    if (squawkEl) squawkEl.innerText = visibleFlights.filter(f => f.isEmergency).length;
 
     // Refresh Airport Arrivals/Departures lists (only if sidebar is actually open to optimize CPU)
     const airportsSidebar = document.getElementById('airports-sidebar');
@@ -238,19 +290,23 @@ function startSimulationLoops() {
       const result = await appState.simulation.fetchAndApplyLiveStates(center.lat, center.lng);
       
       const logoTag = document.querySelector('.logo-text .tag');
+      const visibleFlights = appState.map ? appState.map.getVisibleFlights(appState.simulation.flights, appState.filterCategory) : [];
       if (result.success && logoTag) {
-        logoTag.innerText = `DIRECT RÉSEAU (${result.count})`;
+        logoTag.innerText = `DIRECT RÉSEAU (${visibleFlights.length})`;
         logoTag.style.color = 'var(--color-primary)';
         
-        // Trigger any NEW real emergency alerts detected in refresh
+        // Trigger any NEW real emergency alerts detected in refresh - ONLY IF VISIBLE IN VIEW
         appState.simulation.alerts
           .filter(a => a.isReal)
-          .slice(0, 3)
+          .slice(0, 5)
           .forEach(alert => {
-            // Only trigger if not already shown (check by checking if banner is hidden)
-            const banner = document.getElementById('emergency-banner');
-            if (banner.classList.contains('hidden')) {
-              appState.ui.triggerSquawkToast(alert);
+            const flight = appState.simulation.flights.find(f => f.id === alert.flightId);
+            if (flight && appState.map.isFlightInView(flight)) {
+              // Only trigger if not already shown (check by checking if banner is hidden)
+              const banner = document.getElementById('emergency-banner');
+              if (banner.classList.contains('hidden')) {
+                appState.ui.triggerSquawkToast(alert);
+              }
             }
           });
       } else if (!result.success) {

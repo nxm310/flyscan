@@ -30,14 +30,23 @@ export class MapController {
       position: 'topright'
     }).addTo(this.map);
 
-    // Dark Matter tile layer by default
-    this.tileLayerUrlDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    this.tileLayerUrlLight = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-    
-    this.tileLayer = L.tileLayer(this.tileLayerUrlDark, {
-      maxZoom: 20,
-      subdomains: 'abcd'
+    // Esri Canvas Tile Layers (100% Free, NO API key required, NO watermark!)
+    this.darkBaseUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    this.darkRefUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
+
+    this.lightBaseUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    this.lightRefUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
+
+    this.tileLayer = L.tileLayer(this.darkBaseUrl, {
+      maxZoom: 16,
+      attribution: '&copy; Esri &mdash; DeLorme, NAVTEQ'
     }).addTo(this.map);
+
+    this.labelsLayer = L.tileLayer(this.darkRefUrl, {
+      maxZoom: 16,
+      zIndex: 250
+    }).addTo(this.map);
+
 
 
     // Init polyline trail
@@ -98,9 +107,13 @@ export class MapController {
 
   switchTheme(isLightMode) {
     if (this.tileLayer) {
-      this.tileLayer.setUrl(isLightMode ? this.tileLayerUrlLight : this.tileLayerUrlDark);
+      this.tileLayer.setUrl(isLightMode ? this.lightBaseUrl : this.darkBaseUrl);
+    }
+    if (this.labelsLayer) {
+      this.labelsLayer.setUrl(isLightMode ? this.lightRefUrl : this.darkRefUrl);
     }
   }
+
 
   async toggleRainRadar(forceState) {
     if (this.rainRadarLayer && (forceState === false || (forceState === undefined && this.map.hasLayer(this.rainRadarLayer)))) {

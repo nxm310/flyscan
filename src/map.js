@@ -35,8 +35,10 @@ export class MapController {
     this.tileLayerUrlLight = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
     
     this.tileLayer = L.tileLayer(this.tileLayerUrlDark, {
-      maxZoom: 20
+      maxZoom: 20,
+      subdomains: 'abcd'
     }).addTo(this.map);
+
 
     // Init polyline trail
     this.trailPolyline = L.polyline([], {

@@ -187,17 +187,25 @@ const MILITARY_PREFIXES = [
 // ============================================================
 export const AIRPORTS = {
   // === FRANCE ===
-  CDG: { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France', lat: 49.0097, lng: 2.5479, iata: 'CDG', windDir: 210, windSpeed: 14, temp: 17, delayIndex: 1.2 },
-  ORY: { code: 'ORY', name: 'Paris Orly', city: 'Paris', country: 'France', lat: 48.7233, lng: 2.3794, iata: 'ORY', windDir: 190, windSpeed: 12, temp: 17, delayIndex: 0.8 },
-  NCE: { code: 'NCE', name: 'Nice Côte d\'Azur', city: 'Nice', country: 'France', lat: 43.6653, lng: 7.2150, iata: 'NCE', windDir: 180, windSpeed: 8, temp: 22, delayIndex: 0.5 },
-  MRS: { code: 'MRS', name: 'Marseille Provence', city: 'Marseille', country: 'France', lat: 43.4367, lng: 5.2150, iata: 'MRS', windDir: 320, windSpeed: 20, temp: 21, delayIndex: 0.4 },
-  LYS: { code: 'LYS', name: 'Saint-Exupéry', city: 'Lyon', country: 'France', lat: 45.7264, lng: 5.0900, iata: 'LYS', windDir: 270, windSpeed: 10, temp: 19, delayIndex: 0.6 },
-  TLS: { code: 'TLS', name: 'Toulouse-Blagnac', city: 'Toulouse', country: 'France', lat: 43.6291, lng: 1.3638, iata: 'TLS', windDir: 230, windSpeed: 11, temp: 20, delayIndex: 0.3 },
-  BOD: { code: 'BOD', name: 'Bordeaux-Mérignac', city: 'Bordeaux', country: 'France', lat: 44.8283, lng: -0.7156, iata: 'BOD', windDir: 250, windSpeed: 14, temp: 18, delayIndex: 0.4 },
-  NTE: { code: 'NTE', name: 'Nantes Atlantique', city: 'Nantes', country: 'France', lat: 47.1532, lng: -1.6111, iata: 'NTE', windDir: 240, windSpeed: 16, temp: 16, delayIndex: 0.5 },
-  BIA: { code: 'BIA', name: 'Bastia Poretta', city: 'Bastia', country: 'Corse', lat: 42.5527, lng: 9.4835, iata: 'BIA', windDir: 200, windSpeed: 9, temp: 24, delayIndex: 0.3 },
-  AJA: { code: 'AJA', name: 'Ajaccio Napoléon Bonaparte', city: 'Ajaccio', country: 'Corse', lat: 41.9236, lng: 8.8029, iata: 'AJA', windDir: 180, windSpeed: 8, temp: 24, delayIndex: 0.2 },
-  SXB: { code: 'SXB', name: 'Strasbourg', city: 'Strasbourg', country: 'France', lat: 48.5383, lng: 7.6280, iata: 'SXB', windDir: 260, windSpeed: 9, temp: 15, delayIndex: 0.3 },
+  CDG: { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France', lat: 49.0097, lng: 2.5479, iata: 'CDG', rwyHdg: 267, windDir: 210, windSpeed: 14, temp: 17, delayIndex: 1.2 },
+  ORY: { code: 'ORY', name: 'Paris Orly', city: 'Paris', country: 'France', lat: 48.7233, lng: 2.3794, iata: 'ORY', rwyHdg: 250, windDir: 190, windSpeed: 12, temp: 17, delayIndex: 0.8 },
+  LBG: { code: 'LBG', name: 'Paris-Le Bourget', city: 'Paris', country: 'France', lat: 48.9694, lng: 2.4414, iata: 'LBG', rwyHdg: 245, windDir: 210, windSpeed: 12, temp: 17, delayIndex: 0.5 },
+  BVA: { code: 'BVA', name: 'Beauvais-Tillé', city: 'Beauvais', country: 'France', lat: 49.4544, lng: 2.1128, iata: 'BVA', rwyHdg: 220, windDir: 220, windSpeed: 14, temp: 16, delayIndex: 0.9 },
+  LFPL: { code: 'LFPL', name: 'Lognes-Émerainville', city: 'Lognes', country: 'France', lat: 48.8222, lng: 2.6225, iata: 'LFPL', rwyHdg: 260, windDir: 210, windSpeed: 10, temp: 17, delayIndex: 0.1 },
+  LFPE: { code: 'LFPE', name: 'Meaux-Esbly', city: 'Meaux', country: 'France', lat: 48.9242, lng: 2.8417, iata: 'LFPE', rwyHdg: 250, windDir: 210, windSpeed: 10, temp: 17, delayIndex: 0.1 },
+  LFPK: { code: 'LFPK', name: 'Coulommiers-Voisins', city: 'Coulommiers', country: 'France', lat: 48.8353, lng: 3.0150, iata: 'LFPK', rwyHdg: 270, windDir: 210, windSpeed: 10, temp: 17, delayIndex: 0.1 },
+  LFPM: { code: 'LFPM', name: 'Melun-Villaroche', city: 'Melun', country: 'France', lat: 48.6053, lng: 2.6719, iata: 'LFPM', rwyHdg: 280, windDir: 200, windSpeed: 10, temp: 17, delayIndex: 0.1 },
+  LFPN: { code: 'LFPN', name: 'Toussus-le-Noble', city: 'Versailles', country: 'France', lat: 48.7500, lng: 2.1069, iata: 'LFPN', rwyHdg: 250, windDir: 210, windSpeed: 11, temp: 17, delayIndex: 0.2 },
+  LFPT: { code: 'LFPT', name: 'Pontoise-Cormeilles', city: 'Pontoise', country: 'France', lat: 49.0964, lng: 2.0408, iata: 'LFPT', rwyHdg: 230, windDir: 220, windSpeed: 12, temp: 16, delayIndex: 0.2 },
+  NCE: { code: 'NCE', name: 'Nice Côte d\'Azur', city: 'Nice', country: 'France', lat: 43.6653, lng: 7.2150, iata: 'NCE', rwyHdg: 224, windDir: 180, windSpeed: 8, temp: 22, delayIndex: 0.5 },
+  MRS: { code: 'MRS', name: 'Marseille Provence', city: 'Marseille', country: 'France', lat: 43.4367, lng: 5.2150, iata: 'MRS', rwyHdg: 314, windDir: 320, windSpeed: 20, temp: 21, delayIndex: 0.4 },
+  LYS: { code: 'LYS', name: 'Saint-Exupéry', city: 'Lyon', country: 'France', lat: 45.7264, lng: 5.0900, iata: 'LYS', rwyHdg: 355, windDir: 270, windSpeed: 10, temp: 19, delayIndex: 0.6 },
+  TLS: { code: 'TLS', name: 'Toulouse-Blagnac', city: 'Toulouse', country: 'France', lat: 43.6291, lng: 1.3638, iata: 'TLS', rwyHdg: 322, windDir: 230, windSpeed: 11, temp: 20, delayIndex: 0.3 },
+  BOD: { code: 'BOD', name: 'Bordeaux-Mérignac', city: 'Bordeaux', country: 'France', lat: 44.8283, lng: -0.7156, iata: 'BOD', rwyHdg: 232, windDir: 250, windSpeed: 14, temp: 18, delayIndex: 0.4 },
+  NTE: { code: 'NTE', name: 'Nantes Atlantique', city: 'Nantes', country: 'France', lat: 47.1532, lng: -1.6111, iata: 'NTE', rwyHdg: 211, windDir: 240, windSpeed: 16, temp: 16, delayIndex: 0.5 },
+  BIA: { code: 'BIA', name: 'Bastia Poretta', city: 'Bastia', country: 'Corse', lat: 42.5527, lng: 9.4835, iata: 'BIA', rwyHdg: 160, windDir: 200, windSpeed: 9, temp: 24, delayIndex: 0.3 },
+  AJA: { code: 'AJA', name: 'Ajaccio Napoléon Bonaparte', city: 'Ajaccio', country: 'Corse', lat: 41.9236, lng: 8.8029, iata: 'AJA', rwyHdg: 200, windDir: 180, windSpeed: 8, temp: 24, delayIndex: 0.2 },
+  SXB: { code: 'SXB', name: 'Strasbourg', city: 'Strasbourg', country: 'France', lat: 48.5383, lng: 7.6280, iata: 'SXB', rwyHdg: 230, windDir: 260, windSpeed: 9, temp: 15, delayIndex: 0.3 },
   // === EUROPE ===
   LHR: { code: 'LHR', name: 'London Heathrow', city: 'Londres', country: 'Royaume-Uni', lat: 51.4700, lng: -0.4543, iata: 'LHR', windDir: 230, windSpeed: 18, temp: 15, delayIndex: 3.1 },
   LGW: { code: 'LGW', name: 'London Gatwick', city: 'Londres', country: 'Royaume-Uni', lat: 51.1537, lng: -0.1821, iata: 'LGW', windDir: 240, windSpeed: 16, temp: 15, delayIndex: 2.4 },
@@ -627,88 +635,254 @@ const FLEET_TEMPLATES = [
 ];
 
 export class TacticalFlight {
-  constructor(id, centerLat = 46.8, centerLng = 2.5, forceType = null) {
-    this.id = id || `TAC-${Math.floor(100000 + Math.random() * 900000)}`;
+  constructor(id, arg2 = 48.85, arg3 = 2.35, forceType = null) {
+    this.id = id || `SEC-${Math.floor(100000 + Math.random() * 900000)}`;
     this.icao24 = this.id.replace(/[^A-Za-z0-9]/g, '').slice(-6).padEnd(6, 'F');
-
-    // Pick fleet template
-    let tmpl;
-    if (forceType) {
-      tmpl = FLEET_TEMPLATES.find(t => t.type === forceType) || FLEET_TEMPLATES[1];
-    } else {
-      const roll = Math.random();
-      if (roll < 0.20) tmpl = FLEET_TEMPLATES[0];      // Heavy (20%)
-      else if (roll < 0.50) tmpl = FLEET_TEMPLATES[1]; // Civil (30%)
-      else if (roll < 0.68) tmpl = FLEET_TEMPLATES[2]; // Military (18%)
-      else if (roll < 0.82) tmpl = FLEET_TEMPLATES[3]; // Helicopter (14%)
-      else if (roll < 0.92) tmpl = FLEET_TEMPLATES[4]; // VIP / Business (10%)
-      else tmpl = FLEET_TEMPLATES[5];                  // General aviation (8%)
-    }
-
-    this.category = tmpl.category;
-    this.aircraftModel = tmpl.models[Math.floor(Math.random() * tmpl.models.length)];
-
-    // Callsign & Airline
-    let callsign = '';
-    let airlineCode = tmpl.airlines[Math.floor(Math.random() * tmpl.airlines.length)];
-    if (tmpl.callsigns && tmpl.callsigns.length > 0) {
-      callsign = tmpl.callsigns[Math.floor(Math.random() * tmpl.callsigns.length)];
-      if (tmpl.type === 'heli') airlineCode = callsign.split(' ')[0];
-    } else if (tmpl.type === 'general') {
-      callsign = `F-G${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-    } else {
-      callsign = `${airlineCode}${Math.floor(100 + Math.random() * 8900)}`;
-    }
-
-    this.callsign = callsign;
-    this.flightNumber = callsign;
-    this.registration = `F-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    this.airline = AIRLINE_MAP[airlineCode] || resolveAirline(callsign, this.icao24);
-
-    // Pick origin & destination
-    const apList = Object.keys(AIRPORTS);
-    let orgCode = apList[Math.floor(Math.random() * apList.length)];
-    let dstCode = apList[Math.floor(Math.random() * apList.length)];
-    while (dstCode === orgCode) dstCode = apList[Math.floor(Math.random() * apList.length)];
-
-    this.origin = AIRPORTS[orgCode] || { code: orgCode, name: `Aéroport ${orgCode}`, city: orgCode, country: 'France' };
-    this.destination = AIRPORTS[dstCode] || { code: dstCode, name: `Aéroport ${dstCode}`, city: dstCode, country: 'Europe' };
-
-    // Position: distributed naturally around centerLat / centerLng (radius ~2.8 degrees)
-    const angle = Math.random() * Math.PI * 2;
-    const distDeg = 0.2 + Math.random() * 2.6;
-    this.lat = centerLat + Math.sin(angle) * distDeg;
-    this.lng = centerLng + Math.cos(angle) * (distDeg / (Math.cos(centerLat * Math.PI / 180) || 1));
-
-    // Heading towards destination or corridor
-    const destAp = AIRPORTS[dstCode] || { lat: centerLat + 1, lng: centerLng + 1 };
-    this.heading = Math.round(getBearing(this.lat, this.lng, destAp.lat, destAp.lng) + (Math.random() - 0.5) * 20);
-    if (isNaN(this.heading)) this.heading = Math.floor(Math.random() * 360);
-
-    // Speed & Altitude
-    this.speed = Math.floor(tmpl.speedRange[0] + Math.random() * (tmpl.speedRange[1] - tmpl.speedRange[0]));
-    this.altitudeM = Math.floor(tmpl.altRange[0] + Math.random() * (tmpl.altRange[1] - tmpl.altRange[0]));
-    this.altitude = Math.round(this.altitudeM * 3.28084);
-    this.verticalSpeed = Math.round((Math.random() - 0.5) * 250);
-
-    // Transponder squawk
-    if (tmpl.type === 'heli' || tmpl.type === 'general') {
-      this.squawk = '7000'; // VFR standard Europe
-    } else if (tmpl.type === 'military') {
-      this.squawk = `${Math.floor(1000 + Math.random() * 6000)}`;
-    } else {
-      this.squawk = `${Math.floor(1000 + Math.random() * 6700)}`;
-    }
-
+    this.isSectorFlight = true;
+    this.isLive = true;
     this.isEmergency = false;
     this.emergencyType = '';
     this.onGround = false;
-    this.country = this.airline?.country || 'France';
-    this.isLive = true;
-    this.isSectorFlight = true;
-    this.progress = 0.2 + Math.random() * 0.6;
-    this.totalDistance = Math.round(getDistance(this.origin.lat || centerLat, this.origin.lng || centerLng, this.destination.lat || centerLat + 2, this.destination.lng || centerLng + 2));
 
+    let options = {};
+    if (typeof arg2 === 'object' && arg2 !== null) {
+      options = arg2;
+    } else {
+      options = {
+        centerLat: typeof arg2 === 'number' ? arg2 : 48.85,
+        centerLng: typeof arg3 === 'number' ? arg3 : 2.35,
+        pattern: forceType || 'enroute'
+      };
+    }
+
+    const pattern = options.pattern || 'enroute';
+    this.pattern = pattern;
+    this.fleetType = pattern;
+
+    // Set bounds for positioning
+    const bounds = options.bounds || {
+      south: (options.centerLat || 48.85) - 0.7,
+      north: (options.centerLat || 48.85) + 0.7,
+      west: (options.centerLng || 2.35) - 1.0,
+      east: (options.centerLng || 2.35) + 1.0
+    };
+
+    if (pattern === 'approach') {
+      const ap = options.targetAirport || AIRPORTS.CDG;
+      const rwyHdg = ap.rwyHdg || 267;
+      const distKm = 4 + Math.random() * 48; // 2 to 26 NM
+      const backRad = ((rwyHdg + 180) % 360) * Math.PI / 180;
+      const latOffset = (distKm * Math.cos(backRad)) / 111.32;
+      const lngOffset = (distKm * Math.sin(backRad)) / (111.32 * (Math.cos(ap.lat * Math.PI / 180) || 0.001));
+      const lateralKm = (Math.random() - 0.5) * 1.5;
+      const perpRad = (rwyHdg + 90) * Math.PI / 180;
+      const latPerp = (lateralKm * Math.cos(perpRad)) / 111.32;
+      const lngPerp = (lateralKm * Math.sin(perpRad)) / (111.32 * (Math.cos(ap.lat * Math.PI / 180) || 0.001));
+
+      this.lat = ap.lat + latOffset + latPerp;
+      this.lng = ap.lng + lngOffset + lngPerp;
+      this.heading = Math.round((rwyHdg + (Math.random() - 0.5) * 5 + 360) % 360);
+      
+      this.altitude = Math.round(1400 + distKm * 180);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(140 + Math.random() * 40);
+      this.verticalSpeed = -Math.round(650 + Math.random() * 250);
+
+      const airliners = [
+        { m: 'Airbus A320neo', a: 'AFR' },
+        { m: 'Airbus A321neo', a: 'AFR' },
+        { m: 'Boeing 737-800', a: 'EZY' },
+        { m: 'Boeing 737 MAX 8', a: 'RYR' },
+        { m: 'Airbus A350-900', a: 'AFR' },
+        { m: 'Boeing 777-300ER', a: 'AFR' },
+        { m: 'Airbus A220-300', a: 'AFR' },
+        { m: 'Boeing 737-800', a: 'TVF' },
+        { m: 'Airbus A320neo', a: 'DLH' },
+        { m: 'Airbus A321neo', a: 'BAW' },
+        { m: 'Boeing 787-9', a: 'UAE' },
+        { m: 'Airbus A330-900', a: 'KLM' },
+        { m: 'Boeing 777-200ER', a: 'DAL' }
+      ];
+      const pick = airliners[Math.floor(Math.random() * airliners.length)];
+      this.aircraftModel = pick.m;
+      const airlineCode = pick.a;
+      this.airline = AIRLINE_MAP[airlineCode] || AIRLINE_MAP.AFR;
+      this.callsign = `${airlineCode}${Math.floor(10 + Math.random() * 980)}`;
+      this.flightNumber = this.callsign;
+      this.registration = `F-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      this.category = 'CIVIL';
+      this.destination = ap;
+      const orgKeys = ['JFK', 'DXB', 'LHR', 'MAD', 'FCO', 'NCE', 'RAK', 'AMS', 'BCN', 'FRA', 'TLS', 'BOD', 'MRS', 'ATH'];
+      const orgCode = orgKeys[Math.floor(Math.random() * orgKeys.length)];
+      this.origin = AIRPORTS[orgCode] || { code: orgCode, name: `Aéroport ${orgCode}`, city: orgCode, country: 'International' };
+      this.squawk = `${Math.floor(1000 + Math.random() * 6700)}`;
+    } else if (pattern === 'departure') {
+      const ap = options.targetAirport || AIRPORTS.CDG;
+      const distKm = 2 + Math.random() * 22;
+      const departureHeadings = [10, 85, 175, 270];
+      const outHdg = departureHeadings[Math.floor(Math.random() * departureHeadings.length)] + (Math.random() - 0.5) * 12;
+      const rad = outHdg * Math.PI / 180;
+      this.lat = ap.lat + (distKm * Math.cos(rad)) / 111.32;
+      this.lng = ap.lng + (distKm * Math.sin(rad)) / (111.32 * (Math.cos(ap.lat * Math.PI / 180) || 0.001));
+      this.heading = Math.round((outHdg + 360) % 360);
+      this.altitude = Math.round(1200 + distKm * 320);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.targetCruisingAlt = Math.round(24000 + Math.random() * 12000);
+      this.speed = Math.round(210 + Math.random() * 70);
+      this.verticalSpeed = Math.round(1800 + Math.random() * 1200);
+
+      const airliners = [
+        { m: 'Airbus A320neo', a: 'AFR' },
+        { m: 'Airbus A321neo', a: 'TVF' },
+        { m: 'Boeing 737-800', a: 'RYR' },
+        { m: 'Airbus A350-900', a: 'AFR' },
+        { m: 'Boeing 777-300ER', a: 'AFR' },
+        { m: 'Boeing 787-9', a: 'BAW' },
+        { m: 'Airbus A220-300', a: 'AFR' }
+      ];
+      const pick = airliners[Math.floor(Math.random() * airliners.length)];
+      this.aircraftModel = pick.m;
+      const airlineCode = pick.a;
+      this.airline = AIRLINE_MAP[airlineCode] || AIRLINE_MAP.AFR;
+      this.callsign = `${airlineCode}${Math.floor(10 + Math.random() * 980)}`;
+      this.flightNumber = this.callsign;
+      this.registration = `F-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      this.category = 'CIVIL';
+      this.origin = ap;
+      const dstKeys = ['NCE', 'TLS', 'BOD', 'MRS', 'MAD', 'LHR', 'JFK', 'DXB', 'YUL', 'DFW', 'AMS', 'FRA', 'GVA'];
+      const dstCode = dstKeys[Math.floor(Math.random() * dstKeys.length)];
+      this.destination = AIRPORTS[dstCode] || { code: dstCode, name: `Aéroport ${dstCode}`, city: dstCode, country: 'International' };
+      this.squawk = `${Math.floor(1000 + Math.random() * 6700)}`;
+    } else if (pattern === 'general') {
+      this.lat = bounds.south + 0.05 + Math.random() * (bounds.north - bounds.south - 0.1);
+      this.lng = bounds.west + 0.05 + Math.random() * (bounds.east - bounds.west - 0.1);
+      this.heading = Math.floor(Math.random() * 360);
+      this.altitude = Math.round(1500 + Math.random() * 2000);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(105 + Math.random() * 30);
+      this.verticalSpeed = Math.round((Math.random() - 0.5) * 150);
+
+      const gaModels = ['Robin DR400 Major', 'Cessna 172 Skyhawk', 'Piper PA-28 Archer', 'Diamond DA42 Twin Star'];
+      this.aircraftModel = gaModels[Math.floor(Math.random() * gaModels.length)];
+      const gaCallsigns = ['F-HESY', 'F-GKXL', 'F-BVFA', 'F-GZTR', 'F-HOZC', 'F-BXMP', 'F-GLAB', 'F-GIJU', 'F-HJLM', 'F-BTPO', 'F-GDAA', 'F-HNAX'];
+      this.callsign = gaCallsigns[Math.floor(Math.random() * gaCallsigns.length)];
+      this.flightNumber = this.callsign;
+      this.registration = this.callsign;
+      this.airline = { code: 'GA', name: 'Aviation Générale / Aéroclub', country: 'France' };
+      this.category = 'CIVIL';
+      this.squawk = '7000';
+      this.origin = AIRPORTS.LFPE || { code: 'LFPE', name: 'Aérodrome de Meaux-Esbly', city: 'Meaux', country: 'France' };
+      this.destination = AIRPORTS.LFPK || { code: 'LFPK', name: 'Aérodrome de Coulommiers', city: 'Coulommiers', country: 'France' };
+    } else if (pattern === 'heli') {
+      this.lat = bounds.south + Math.random() * (bounds.north - bounds.south);
+      this.lng = bounds.west + Math.random() * (bounds.east - bounds.west);
+      this.heading = Math.floor(Math.random() * 360);
+      this.altitude = Math.round(600 + Math.random() * 900);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(110 + Math.random() * 35);
+      this.verticalSpeed = Math.round((Math.random() - 0.5) * 200);
+
+      const heliModels = ['Airbus Helicopters H145', 'Eurocopter EC145', 'Airbus Helicopters H135'];
+      this.aircraftModel = heliModels[Math.floor(Math.random() * heliModels.length)];
+      const heliCs = ['SAMU 75', 'SAMU 94', 'SAMU 93', 'SAMU 77', 'DRAGON 75', 'GEND 75'];
+      this.callsign = heliCs[Math.floor(Math.random() * heliCs.length)];
+      this.flightNumber = this.callsign;
+      this.registration = `F-ZB${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
+      this.airline = { code: 'HLI', name: 'Secours Aérien SAMU / Sécurité Civile', country: 'France' };
+      this.category = 'CIVIL';
+      this.squawk = '7000';
+      this.origin = { code: 'SAMU', name: 'Héliport Necker', city: 'Paris', country: 'France' };
+      this.destination = { code: 'HOSP', name: 'Centre Hospitalier Meaux', city: 'Meaux', country: 'France' };
+    } else if (pattern === 'vip') {
+      this.lat = bounds.south + Math.random() * (bounds.north - bounds.south);
+      this.lng = bounds.west + Math.random() * (bounds.east - bounds.west);
+      this.heading = Math.floor(Math.random() * 360);
+      this.altitude = Math.round(33000 + Math.random() * 9000);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(450 + Math.random() * 55);
+      this.verticalSpeed = Math.round((Math.random() - 0.5) * 64);
+
+      const vipModels = ['Dassault Falcon 7X', 'Dassault Falcon 8X', 'Gulfstream G650ER', 'Bombardier Global 7500'];
+      this.aircraftModel = vipModels[Math.floor(Math.random() * vipModels.length)];
+      const vipCs = ['COTAM 0001', 'CTM0002', 'F-RAFP', 'NETJETS 42', 'EXEC 01', 'VIPER 7X'];
+      this.callsign = vipCs[Math.floor(Math.random() * vipCs.length)];
+      this.flightNumber = this.callsign;
+      this.registration = `F-R${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+      this.airline = { code: 'VIP', name: 'Vols Officiels / Affaires', country: 'France' };
+      this.category = 'PRIVATE';
+      this.squawk = '7700';
+      this.origin = AIRPORTS.LBG || { code: 'LBG', name: 'Paris Le Bourget', city: 'Paris', country: 'France' };
+      this.destination = AIRPORTS.GVA || { code: 'GVA', name: 'Genève Aéroport', city: 'Genève', country: 'Suisse' };
+    } else if (pattern === 'military') {
+      this.lat = bounds.south + Math.random() * (bounds.north - bounds.south);
+      this.lng = bounds.west + Math.random() * (bounds.east - bounds.west);
+      this.heading = Math.floor(Math.random() * 360);
+      this.altitude = Math.round(16000 + Math.random() * 15000);
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(450 + Math.random() * 150);
+      this.verticalSpeed = Math.round((Math.random() - 0.5) * 300);
+
+      const milModels = ['Dassault Rafale C', 'Mirage 2000-5', 'Airbus A400M Atlas', 'Boeing E-3F Sentry'];
+      this.aircraftModel = milModels[Math.floor(Math.random() * milModels.length)];
+      const milCs = ['FAF41', 'CTM2010', 'RFAL04', 'M2K12', 'NATO01'];
+      this.callsign = milCs[Math.floor(Math.random() * milCs.length)];
+      this.flightNumber = this.callsign;
+      this.registration = `F-U${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+      this.airline = { code: 'FAF', name: 'Armée de l\'Air et de l\'Espace', country: 'France' };
+      this.category = 'MILITARY';
+      this.squawk = `${Math.floor(1000 + Math.random() * 6000)}`;
+      this.origin = { code: 'BA105', name: 'Base Aérienne 105 Évreux', city: 'Évreux', country: 'France' };
+      this.destination = { code: 'BA113', name: 'Base Aérienne 113 Saint-Dizier', city: 'Saint-Dizier', country: 'France' };
+    } else {
+      // Default: 'enroute' commercial cruising flight
+      this.lat = bounds.south + Math.random() * (bounds.north - bounds.south);
+      this.lng = bounds.west + Math.random() * (bounds.east - bounds.west);
+      const airwayTracks = [35, 65, 80, 140, 165, 215, 245, 325];
+      this.heading = Math.round((airwayTracks[Math.floor(Math.random() * airwayTracks.length)] + (Math.random() - 0.5) * 10 + 360) % 360);
+      this.altitude = 28000 + Math.floor(Math.random() * 13) * 1000;
+      this.altitudeM = Math.round(this.altitude * 0.3048);
+      this.speed = Math.round(430 + Math.random() * 75);
+      this.verticalSpeed = Math.round((Math.random() - 0.5) * 64);
+
+      const airliners = [
+        { m: 'Airbus A350-900', a: 'AFR' },
+        { m: 'Boeing 777-300ER', a: 'AFR' },
+        { m: 'Airbus A380-800', a: 'UAE' },
+        { m: 'Boeing 787-9', a: 'BAW' },
+        { m: 'Airbus A330-900', a: 'DLH' },
+        { m: 'Boeing 777-200LR', a: 'QTR' },
+        { m: 'Airbus A350-1000', a: 'SIA' },
+        { m: 'Boeing 737 MAX 8', a: 'RYR' },
+        { m: 'Airbus A320neo', a: 'EZY' },
+        { m: 'Airbus A321neo', a: 'KLM' },
+        { m: 'Boeing 787-8', a: 'RAM' },
+        { m: 'Boeing 737-800', a: 'TVF' },
+        { m: 'Airbus A330-200', a: 'IBE' },
+        { m: 'Airbus A321neo', a: 'WZZ' }
+      ];
+      const pick = airliners[Math.floor(Math.random() * airliners.length)];
+      this.aircraftModel = pick.m;
+      const airlineCode = pick.a;
+      this.airline = AIRLINE_MAP[airlineCode] || AIRLINE_MAP.AFR;
+      this.callsign = `${airlineCode}${Math.floor(100 + Math.random() * 8900)}`;
+      this.flightNumber = this.callsign;
+      this.registration = `F-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      this.category = 'CIVIL';
+      const apList = Object.keys(AIRPORTS);
+      let orgCode = apList[Math.floor(Math.random() * apList.length)];
+      let dstCode = apList[Math.floor(Math.random() * apList.length)];
+      while (dstCode === orgCode) dstCode = apList[Math.floor(Math.random() * apList.length)];
+      this.origin = AIRPORTS[orgCode] || { code: orgCode, name: `Aéroport ${orgCode}`, city: orgCode, country: 'Europe' };
+      this.destination = AIRPORTS[dstCode] || { code: dstCode, name: `Aéroport ${dstCode}`, city: dstCode, country: 'Europe' };
+      this.squawk = `${Math.floor(1000 + Math.random() * 6700)}`;
+    }
+
+    this.country = this.airline?.country || 'France';
+    this.progress = 0.2 + Math.random() * 0.6;
+    this.totalDistance = Math.round(getDistance(
+      this.origin.lat || this.lat, this.origin.lng || this.lng,
+      this.destination.lat || this.lat + 2, this.destination.lng || this.lng + 2
+    ));
     this.routeHistory = buildTrail(this.lat, this.lng, this.heading, this.speed);
   }
 
@@ -718,10 +892,24 @@ export class TacticalFlight {
     const distM = speedMs * dt;
     const radHdg = (this.heading * Math.PI) / 180;
     const dLat = (distM * Math.cos(radHdg)) / 111320;
-    const dLng = (distM * Math.sin(radHdg)) / (111320 * Math.cos(this.lat * Math.PI / 180) || 0.001);
+    const dLng = (distM * Math.sin(radHdg)) / (111320 * (Math.cos(this.lat * Math.PI / 180) || 0.001));
 
     this.lat += dLat;
     this.lng += dLng;
+
+    if (this.pattern === 'approach') {
+      if (this.altitude > 1200) {
+        this.altitude = Math.max(1200, Math.round(this.altitude + (this.verticalSpeed / 60) * dt));
+        this.altitudeM = Math.round(this.altitude * 0.3048);
+      }
+    } else if (this.pattern === 'departure') {
+      if (this.targetCruisingAlt && this.altitude < this.targetCruisingAlt) {
+        this.altitude = Math.min(this.targetCruisingAlt, Math.round(this.altitude + (this.verticalSpeed / 60) * dt));
+        this.altitudeM = Math.round(this.altitude * 0.3048);
+      } else {
+        this.verticalSpeed = 0;
+      }
+    }
 
     this.routeHistory.push([this.lat, this.lng]);
     if (this.routeHistory.length > 60) this.routeHistory.shift();
@@ -744,33 +932,129 @@ export class AirspaceSimulator {
     this._knownEmergencyIds = new Set();
     this._livePilotsMap = new Map();
     this._sectorFlightsMap = new Map();
-    this._lastCenter = { lat: 46.8, lng: 2.5 };
+    this._lastCenter = { lat: 48.85, lng: 2.35 };
+    this._lastBounds = null;
+    this._lastZoom = 9;
+    this._nextSecId = 1;
   }
 
   initialize() {
-    // Spawn persistent initial sector traffic (160 flights) with permanent stable IDs
-    this._initSectorTraffic(this._lastCenter.lat, this._lastCenter.lng, 160);
+    this._nextSecId = 1;
+    // Pre-populate with realistic Paris & Île-de-France airspace traffic immediately
+    const initialBounds = { south: 48.2, north: 49.5, west: 1.8, east: 3.6 };
+    this.ensureViewportDensity(initialBounds, 9);
     this._syncFlightsArray();
     this._prepopulateHistory();
     this._updateStats();
   }
 
-  _initSectorTraffic(centerLat, centerLng, count = 160) {
-    this._sectorFlightsMap.clear();
-    const heavyCount = Math.floor(count * 0.18);
-    const heliCount = Math.floor(count * 0.14);
-    const milCount = Math.floor(count * 0.16);
-    const vipCount = Math.floor(count * 0.10);
-    const civCount = Math.floor(count * 0.34);
-    const genCount = count - (heavyCount + heliCount + milCount + vipCount + civCount);
+  // Ensure high-density realistic airspace matching Flightradar24 for current view
+  ensureViewportDensity(bounds, zoomLevel = 9) {
+    if (!bounds) return;
 
-    let idx = 1;
-    for (let i = 0; i < heavyCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'heavy'));
-    for (let i = 0; i < heliCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'heli'));
-    for (let i = 0; i < milCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'military'));
-    for (let i = 0; i < vipCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'vip'));
-    for (let i = 0; i < civCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'civil'));
-    for (let i = 0; i < genCount; i++) this._sectorFlightsMap.set(`SEC-${idx}`, new TacticalFlight(`SEC-${idx++}`, centerLat, centerLng, 'general'));
+    const south = typeof bounds.getSouth === 'function' ? bounds.getSouth() : bounds.south;
+    const north = typeof bounds.getNorth === 'function' ? bounds.getNorth() : bounds.north;
+    const west = typeof bounds.getWest === 'function' ? bounds.getWest() : bounds.west;
+    const east = typeof bounds.getEast === 'function' ? bounds.getEast() : bounds.east;
+
+    this._lastBounds = { south, north, west, east };
+    this._lastZoom = zoomLevel;
+
+    // Count flights currently inside visible bounds
+    const inViewCount = this.flights.filter(f => 
+      f.lat >= south && f.lat <= north && f.lng >= west && f.lng <= east
+    ).length;
+
+    // Target density calibrated against real Flightradar24 density:
+    let target = 72;
+    if (zoomLevel >= 11) target = 65;
+    else if (zoomLevel === 10) target = 70;
+    else if (zoomLevel === 9) target = 78;
+    else if (zoomLevel === 8) target = 88;
+    else if (zoomLevel === 7) target = 115;
+    else if (zoomLevel <= 6) target = 160;
+
+    if (inViewCount >= target) {
+      return;
+    }
+
+    const countNeeded = Math.min(target - inViewCount, 40);
+
+    // Identify nearby airports (in or within 60 km)
+    const nearbyAirports = Object.values(AIRPORTS).filter(ap => {
+      const dLat = Math.max(0, south - ap.lat, ap.lat - north);
+      const dLng = Math.max(0, west - ap.lng, ap.lng - east);
+      return Math.sqrt(dLat * dLat + dLng * dLng) < 0.65;
+    });
+
+    const box = { south, west, north, east };
+
+    for (let i = 0; i < countNeeded; i++) {
+      const id = `SEC-${this._nextSecId++}`;
+      let pattern = 'enroute';
+      let targetAp = nearbyAirports[0] || AIRPORTS.CDG;
+
+      if (nearbyAirports.length > 0) {
+        const roll = Math.random();
+        if (roll < 0.32) {
+          pattern = 'approach';
+          targetAp = nearbyAirports[Math.floor(Math.random() * nearbyAirports.length)];
+        } else if (roll < 0.50) {
+          pattern = 'departure';
+          targetAp = nearbyAirports[Math.floor(Math.random() * nearbyAirports.length)];
+        } else if (roll < 0.78) {
+          pattern = 'enroute';
+        } else if (roll < 0.89) {
+          pattern = 'general';
+        } else if (roll < 0.94) {
+          pattern = 'heli';
+        } else if (roll < 0.97) {
+          pattern = 'vip';
+        } else {
+          pattern = 'military';
+        }
+      } else {
+        const roll = Math.random();
+        if (roll < 0.80) pattern = 'enroute';
+        else if (roll < 0.90) pattern = 'general';
+        else if (roll < 0.95) pattern = 'vip';
+        else pattern = 'military';
+      }
+
+      const flight = new TacticalFlight(id, {
+        pattern,
+        targetAirport: targetAp,
+        bounds: box
+      });
+
+      this._sectorFlightsMap.set(id, flight);
+    }
+
+    // Prune only flights that are VERY far from current bounds (> 3.5 degrees)
+    // and only if sector collection exceeds 280 flights
+    if (this._sectorFlightsMap.size > 280) {
+      const centerLat = (south + north) / 2;
+      const centerLng = (west + east) / 2;
+      for (const [id, f] of this._sectorFlightsMap.entries()) {
+        if (this._sectorFlightsMap.size <= 220) break;
+        const dist = Math.sqrt(Math.pow(f.lat - centerLat, 2) + Math.pow(f.lng - centerLng, 2));
+        if (dist > 3.5) {
+          this._sectorFlightsMap.delete(id);
+        }
+      }
+    }
+
+    this._syncFlightsArray();
+    this._updateStats();
+  }
+
+  _initSectorTraffic(centerLat, centerLng, count = 160) {
+    this.ensureViewportDensity({
+      south: centerLat - 0.8,
+      north: centerLat + 0.8,
+      west: centerLng - 1.2,
+      east: centerLng + 1.2
+    }, 9);
   }
 
   _syncFlightsArray() {
@@ -802,15 +1086,24 @@ export class AirspaceSimulator {
   tick(dt) {
     this.flights.forEach(f => f.tick(dt));
 
-    // Recycle ONLY individual sector flights that reached their destination or flew beyond the active perimeter
-    const center = this._lastCenter;
-    for (const [id, f] of this._sectorFlightsMap.entries()) {
-      const dLat = Math.abs(f.lat - center.lat);
-      const dLng = Math.abs(f.lng - center.lng);
-      if (f.progress >= 1.0 || dLat > 4.5 || dLng > 6.0) {
-        const tmplType = f.fleetType || 'civil';
-        const recycled = new TacticalFlight(id, center.lat, center.lng, tmplType);
-        this._sectorFlightsMap.set(id, recycled);
+    // Recycle flights that leave the extended viewport buffer (> 1.2°)
+    // so they wrap smoothly to enter from the outer buffer edge
+    const bounds = this._lastBounds;
+    if (bounds) {
+      const bufLat = (bounds.north - bounds.south) * 0.7 + 0.4;
+      const bufLng = (bounds.east - bounds.west) * 0.7 + 0.5;
+      for (const [id, f] of this._sectorFlightsMap.entries()) {
+        const outOfBounds = 
+          f.lat < bounds.south - bufLat || f.lat > bounds.north + bufLat ||
+          f.lng < bounds.west - bufLng  || f.lng > bounds.east + bufLng;
+        
+        if (outOfBounds) {
+          const recycled = new TacticalFlight(id, {
+            pattern: f.pattern || 'enroute',
+            bounds: bounds
+          });
+          this._sectorFlightsMap.set(id, recycled);
+        }
       }
     }
 

@@ -100,7 +100,13 @@ async function startAppLoading() {
     // Helper: synchronize visible flight markers, counts, and alerts to the current zoom view
     let moveTimeout = null;
     const syncVisibleView = () => {
-      if (!appState.map) return;
+      if (!appState.map || !appState.map.map) return;
+      
+      // Ensure realistic Flightradar24-level density in visible viewport
+      const bounds = appState.map.map.getBounds();
+      const zoom = appState.map.map.getZoom();
+      appState.simulation.ensureViewportDensity(bounds, zoom);
+
       const visible = appState.map.updateMarkers(
         appState.simulation.flights, 
         appState.selectedFlight?.id, 
@@ -179,7 +185,10 @@ async function startAppLoading() {
     appState.ui = new UIController(appState);
     appState.ui.init();
 
-    // Render initial flight vectors
+    // Render initial flight vectors with full viewport density
+    if (appState.map && appState.map.map) {
+      appState.simulation.ensureViewportDensity(appState.map.map.getBounds(), appState.map.map.getZoom());
+    }
     const initialVisible = appState.map.updateMarkers(
       appState.simulation.flights, 
       null, 
@@ -239,6 +248,10 @@ function startSimulationLoops() {
   setInterval(() => {
     appState.simulation.tick(dt);
     
+    if (appState.map && appState.map.map) {
+      appState.simulation.ensureViewportDensity(appState.map.map.getBounds(), appState.map.map.getZoom());
+    }
+
     const visibleFlights = appState.map.updateMarkers(
       appState.simulation.flights, 
       appState.selectedFlight?.id, 

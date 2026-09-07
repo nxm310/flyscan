@@ -7,10 +7,13 @@ import { MapController } from './map.js';
 import { ARController } from './ar.js';
 import { UIController } from './ui.js';
 
+
 // Global application state object
 const appState = {
   simulation: null,
   map: null,
+  radar3d: null,
+  is3DMode: false,
   ar: null,
   ui: null,
   selectedFlight: null,
@@ -31,7 +34,15 @@ function initLucide() {
 window.addEventListener('load', () => {
   initLucide();
   startAppLoading();
+
+  // Register Progressive Web App Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./public/sw.js')
+      .then(reg => console.log('[FlyRadar PWA] Service Worker actif:', reg.scope))
+      .catch(err => console.warn('[FlyRadar PWA] Échec Service Worker:', err));
+  }
 });
+
 
 async function startAppLoading() {
   const progressBar = document.getElementById('splash-progress');
@@ -74,6 +85,18 @@ async function startAppLoading() {
     
     appState.map.init(46.8, 2.5, 6);
 
+    // Step 3b: Initialize 3D Tactical Radar (WebGL Three.js - Lazy loaded)
+    const { Radar3DController } = await import('./radar3d.js');
+    appState.radar3d = new Radar3DController((flight) => {
+      if (flight) {
+        appState.ui.selectFlight(flight);
+      } else {
+        appState.ui.deselectFlight();
+      }
+    });
+    appState.radar3d.init();
+
+
     // Listen to manual map drags/pans to instantly load live flights for the newly positioned area!
     let moveTimeout = null;
     appState.map.map.on('moveend', () => {
@@ -90,12 +113,20 @@ async function startAppLoading() {
             appState.selectedFlight?.id, 
             appState.filterCategory
           );
+          if (appState.is3DMode && appState.radar3d && appState.radar3d.isActive) {
+            appState.radar3d.update3DAirspace(
+              appState.simulation.flights, 
+              appState.selectedFlight?.id, 
+              appState.filterCategory
+            );
+          }
           appState.ui.showToast(`🛰️ Radar calé : ${result.count} vols en direct.`);
         } else {
           appState.ui.showToast("⚠️ Zone sans couverture ADS-B ou échec API.");
         }
       }, 800); // 800ms debounce to prevent API spam while dragging
     });
+
 
     // Step 4: Initialize Augmented Reality HUD
     await sleep(300);
@@ -167,6 +198,16 @@ function startSimulationLoops() {
       appState.selectedFlight?.id, 
       appState.filterCategory
     );
+
+    // Update 3D radar airspace if active
+    if (appState.is3DMode && appState.radar3d && appState.radar3d.isActive) {
+      appState.radar3d.update3DAirspace(
+        appState.simulation.flights, 
+        appState.selectedFlight?.id, 
+        appState.filterCategory
+      );
+    }
+
 
     // Update Live sidebar telemetry if a flight is selected
     if (appState.selectedFlight) {

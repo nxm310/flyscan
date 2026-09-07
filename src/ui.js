@@ -5,7 +5,65 @@
 import { AIRPORTS } from './simulation.js';
 import { fetchAirportWeather, windDirToCompass } from './weather.js';
 
+// Planespotters photo cache
+const aircraftPhotoCache = new Map();
+
+async function fetchPlanespottersPhoto(flight) {
+  const hex = (flight.icao24 || flight.hex || '').toLowerCase().trim();
+  const reg = (flight.registration || flight.r || '').trim();
+  const cacheKey = hex || reg;
+  if (!cacheKey) return null;
+
+  if (aircraftPhotoCache.has(cacheKey)) {
+    return aircraftPhotoCache.get(cacheKey);
+  }
+
+  try {
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const subpath = hex ? `pub/photos/hex/${hex}` : `pub/photos/reg/${encodeURIComponent(reg)}`;
+    const directUrl = `https://api.planespotters.net/${subpath}`;
+    
+    // Choose primary URL: Vite proxy if on localhost, else CORS proxy
+    const primaryUrl = isDev ? `/api-planespotters/${subpath}` : `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
+    
+    let res = null;
+    try {
+      res = await fetch(primaryUrl, { signal: AbortSignal.timeout(5000) });
+    } catch (_) {
+      // Fallback to secondary CORS proxy if primary fails
+      const fallbackUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
+      res = await fetch(fallbackUrl, { signal: AbortSignal.timeout(5000) });
+    }
+
+    if (!res || !res.ok) {
+      aircraftPhotoCache.set(cacheKey, null);
+      return null;
+    }
+
+
+    const data = await res.json();
+    const photos = data.photos || [];
+    if (photos.length > 0) {
+      const p = photos[0];
+      const photoInfo = {
+        thumbnail: p.thumbnail?.src || p.thumbnail_large?.src,
+        full: p.thumbnail_large?.src || p.thumbnail?.src,
+        photographer: p.photographer || 'Spotter',
+        link: p.link || `https://www.planespotters.net`
+      };
+      aircraftPhotoCache.set(cacheKey, photoInfo);
+      return photoInfo;
+    }
+    aircraftPhotoCache.set(cacheKey, null);
+    return null;
+  } catch (err) {
+    aircraftPhotoCache.set(cacheKey, null);
+    return null;
+  }
+}
+
 export class UIController {
+
   constructor(appState) {
     this.appState = appState; // Reference to core app state
     this.currentAirportCode = 'CDG';
@@ -24,7 +82,7 @@ export class UIController {
       this.deselectFlight();
     });
 
-    // Main Header: Filters (only aircraft category filters)
+    // Main Header: Filters (aircraft category & tactical filters)
     const filterBtns = document.querySelectorAll('.filter-btn[data-filter]');
     filterBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -34,6 +92,9 @@ export class UIController {
         const filter = btn.getAttribute('data-filter');
         this.appState.filterCategory = filter;
         this.appState.map.updateMarkers(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
+        if (this.appState.radar3d && this.appState.radar3d.isActive) {
+          this.appState.radar3d.update3DAirspace(this.appState.simulation.flights, this.appState.selectedFlight?.id, filter);
+        }
       });
     });
 
@@ -58,7 +119,59 @@ export class UIController {
       }
     });
 
+    // Weather Radar Toggle Button (RainViewer live layer)
+    const weatherBtn = document.getElementById('weather-radar-btn');
+    if (weatherBtn) {
+      weatherBtn.addEventListener('click', async () => {
+        weatherBtn.classList.add('loading');
+        const isActive = await this.appState.map.toggleRainRadar();
+        weatherBtn.classList.remove('loading');
+        if (isActive) {
+          weatherBtn.classList.add('active');
+          this.showToast('🌧️ Radar de pluie activé (RainViewer)');
+        } else {
+          weatherBtn.classList.remove('active');
+          this.showToast('🌤️ Radar météo désactivé');
+        }
+      });
+    }
 
+    // 3D Radar vs 2D Map Toggle Button
+    const view3dBtn = document.getElementById('view-mode-toggle-btn');
+    if (view3dBtn) {
+      view3dBtn.addEventListener('click', () => {
+        const is3D = this.appState.is3DMode = !this.appState.is3DMode;
+        if (is3D) {
+          view3dBtn.classList.add('active');
+          view3dBtn.innerHTML = `<i data-lucide="map"></i> <span>2D CARTE</span>`;
+          document.getElementById('map').classList.add('hidden');
+          if (this.appState.radar3d) {
+            this.appState.radar3d.setActive(true);
+            this.appState.radar3d.update3DAirspace(
+              this.appState.simulation.flights,
+              this.appState.selectedFlight?.id,
+              this.appState.filterCategory
+            );
+          }
+          this.showToast('🌐 Mode 3D Globe Tactique activé');
+        } else {
+          view3dBtn.classList.remove('active');
+          view3dBtn.innerHTML = `<i data-lucide="globe"></i> <span>Mode 3D</span>`;
+          document.getElementById('map').classList.remove('hidden');
+          if (this.appState.radar3d) {
+            this.appState.radar3d.setActive(false);
+          }
+          this.appState.map.map.invalidateSize();
+          this.appState.map.updateMarkers(
+            this.appState.simulation.flights,
+            this.appState.selectedFlight?.id,
+            this.appState.filterCategory
+          );
+          this.showToast('🗺️ Retour en mode carte 2D');
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      });
+    }
 
     // Theme Toggle Button (Map Only)
     let isLightMode = false;
@@ -73,6 +186,7 @@ export class UIController {
       btn.innerHTML = `<i data-lucide="${icon}"></i> ${text}`;
       lucide.createIcons();
     });
+
 
     // AR Toggle Button
     document.getElementById('ar-toggle-btn').addEventListener('click', () => {
@@ -277,6 +391,11 @@ export class UIController {
     // Update 2D markers highlighting
     this.appState.map.updateMarkers(this.appState.simulation.flights, flight.id, this.appState.filterCategory);
 
+    // Update 3D radar highlighting if active
+    if (this.appState.radar3d && this.appState.radar3d.isActive) {
+      this.appState.radar3d.update3DAirspace(this.appState.simulation.flights, flight.id, this.appState.filterCategory);
+    }
+
     // Refresh details
     this.updateFlightDetailsPanel(flight);
   }
@@ -284,8 +403,16 @@ export class UIController {
   deselectFlight() {
     this.appState.selectedFlight = null;
     document.getElementById('flight-details-sidebar').classList.add('closed');
+    const photoWrap = document.getElementById('det-aircraft-photo-wrap');
+    if (photoWrap) {
+      photoWrap._currentFlightId = null;
+      photoWrap.classList.add('hidden');
+    }
     if (this.appState.map && this.appState.map.map) {
       this.appState.map.updateMarkers(this.appState.simulation.flights, null, this.appState.filterCategory);
+    }
+    if (this.appState.radar3d && this.appState.radar3d.isActive) {
+      this.appState.radar3d.update3DAirspace(this.appState.simulation.flights, null, this.appState.filterCategory);
     }
   }
 
@@ -300,6 +427,42 @@ export class UIController {
     document.getElementById('det-flight-number').innerText = flight.flightNumber || flight.callsign || flight.icao24 || '???';
     document.getElementById('det-airline-name').innerText = flight.airline?.name || 'Compagnie inconnue';
     document.getElementById('det-flight-category').innerText = flight.category || 'CIVIL';
+
+    // Real Aircraft Photo (Planespotters.net API)
+    const photoWrap = document.getElementById('det-aircraft-photo-wrap');
+    const photoImg = document.getElementById('det-aircraft-photo');
+    const photoLoading = document.getElementById('det-aircraft-photo-loading');
+    const photoCredit = document.getElementById('det-aircraft-credit');
+
+    if (photoWrap) {
+      const currentFlightId = flight.id;
+      if (photoWrap._currentFlightId !== currentFlightId) {
+        photoWrap._currentFlightId = currentFlightId;
+        photoWrap.classList.remove('hidden');
+        photoLoading.classList.remove('hidden');
+        photoImg.classList.add('hidden');
+        if (photoCredit) photoCredit.innerHTML = '';
+
+        fetchPlanespottersPhoto(flight).then(photoInfo => {
+          if (this.appState.selectedFlight?.id !== currentFlightId) return;
+
+          photoLoading.classList.add('hidden');
+          if (photoInfo && (photoInfo.full || photoInfo.thumbnail)) {
+            photoImg.src = photoInfo.full || photoInfo.thumbnail;
+            photoImg.classList.remove('hidden');
+            if (photoCredit) {
+              photoCredit.innerHTML = `<a href="${photoInfo.link}" target="_blank" rel="noopener">© ${photoInfo.photographer}</a>`;
+            }
+            photoWrap.classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          } else {
+            // No photo found for this hex/reg
+            photoWrap.classList.add('hidden');
+          }
+        });
+      }
+    }
+
 
     // Route — show what we know, otherwise show raw coords
     const origCode = flight.origin?.code || '???';

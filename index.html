@@ -8,13 +8,17 @@
         window.location.replace(window.location.href + '/');
       }
     </script>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>" />
+    <link rel="icon" type="image/svg+xml" href="./public/icon.svg" />
+    <link rel="apple-touch-icon" href="./public/apple-touch-icon.png" />
+    <link rel="manifest" href="./public/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#070a13" />
     <meta name="description" content="Flyradar - Suivi de vol en direct, radar aéronautique en temps réel, alertes d'urgence et mode Réalité Augmentée." />
     
     <title>Flyradar — Radar Aéronautique et Suivi de Vols en Temps Réel</title>
+
 
     <!-- Google Fonts: Outfit & Space Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -96,12 +100,22 @@
         <div class="filter-controls">
           <button class="filter-btn active" data-filter="all">Tous</button>
           <button class="filter-btn" data-filter="civil"><i data-lucide="plane"></i> Civil</button>
-          <button class="filter-btn" data-filter="military"><i data-lucide="shield"></i> Militaire</button>
+          <button class="filter-btn" data-filter="military"><i data-lucide="shield"></i> Chasseurs</button>
+          <button class="filter-btn" data-filter="heavy"><i data-lucide="box"></i> Gros-Porteurs</button>
+          <button class="filter-btn" data-filter="heli"><i data-lucide="fan"></i> Hélicos</button>
+          <button class="filter-btn" data-filter="vip"><i data-lucide="crown"></i> VIP</button>
           <button class="filter-btn" data-filter="private"><i data-lucide="sparkles"></i> Privé</button>
+          <button id="weather-radar-btn" class="filter-btn" title="Activer / Désactiver le radar de pluie en direct">
+            <i data-lucide="cloud-rain"></i> Radar Pluie
+          </button>
+          <button id="view-mode-toggle-btn" class="filter-btn toggle-3d-btn" title="Basculer entre la Carte 2D et le Radar 3D">
+            <i data-lucide="globe"></i> <span>Mode 3D</span>
+          </button>
           <button id="theme-toggle-btn" class="filter-btn" title="Changer le fond de carte (Clair/Sombre)">
             <i data-lucide="moon"></i> Sombre
           </button>
         </div>
+
 
         <div class="action-buttons">
           <div class="header-actions">
@@ -126,6 +140,7 @@
       <!-- 2D Live Radar Map Area -->
       <main id="map-container">
         <div id="map"></div>
+        <div id="radar-3d-container" class="hidden"></div>
         <!-- Live Airspace Statistics Overlay -->
         <div class="map-stats-badge glass-panel">
           <div class="stat-item">
@@ -169,6 +184,19 @@
             </div>
             <span class="flight-type-badge" id="det-flight-category">CIVIL</span>
           </div>
+
+          <!-- Real Aircraft Photo Container (Planespotters.net API) -->
+          <div class="aircraft-photo-card hidden" id="det-aircraft-photo-wrap">
+            <div class="photo-loading-spinner" id="det-aircraft-photo-loading">
+              <i data-lucide="camera"></i> <span>Recherche photo livrée...</span>
+            </div>
+            <img id="det-aircraft-photo" class="aircraft-photo-img" src="" alt="Photo appareil" />
+            <div class="photo-footer-bar" id="det-aircraft-credit-wrap">
+              <span class="photo-real-tag"><i data-lucide="aperture"></i> PHOTO RÉELLE</span>
+              <span class="photo-photographer" id="det-aircraft-credit"></span>
+            </div>
+          </div>
+
 
           <div class="flight-route-section">
             <div class="airport-code-block">

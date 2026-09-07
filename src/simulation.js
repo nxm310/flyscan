@@ -23,6 +23,47 @@ export function getBearing(lat1, lng1, lat2, lng2) {
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
+// Tactical Category Filter matcher
+export function checkFlightFilterMatch(f, filterCategory) {
+  if (!filterCategory || filterCategory === 'all') return true;
+  if (filterCategory === 'civil') return f.category === 'CIVIL';
+  if (filterCategory === 'military') return f.category === 'MILITARY' || isMilitaryFlight(f);
+  if (filterCategory === 'private') return f.category === 'PRIVATE';
+  if (filterCategory === 'heavy') return isHeavyAircraft(f);
+  if (filterCategory === 'heli') return isHelicopter(f);
+  if (filterCategory === 'vip') return isVipFlight(f);
+  return true;
+}
+
+function isHeavyAircraft(f) {
+  const model = ((f.aircraftModel || '') + ' ' + (f.t || '') + ' ' + (f.desc || '')).toUpperCase();
+  const heavyCodes = ['A388', 'A380', 'B744', 'B748', 'B747', 'B77W', 'B772', 'B773', 'B777', 'A359', 'A35K', 'A350', 'A343', 'A346', 'A332', 'A333', 'A339', 'A3ST', 'A337', 'A124', 'AN124', 'C17', 'BELUGA'];
+  return heavyCodes.some(code => model.includes(code));
+}
+
+function isHelicopter(f) {
+  const model = ((f.aircraftModel || '') + ' ' + (f.t || '') + ' ' + (f.desc || '')).toUpperCase();
+  const callsign = ((f.flightNumber || '') + ' ' + (f.callsign || '')).toUpperCase();
+  const heliCodes = ['H135', 'H145', 'H160', 'H225', 'EC35', 'EC45', 'EC25', 'EC20', 'AS50', 'AS55', 'AS32', 'B06', 'B206', 'B407', 'R44', 'R66', 'S76', 'S92', 'AW139', 'AW109', 'A109', 'NH90', 'TIGR'];
+  const heliCallsigns = ['SAMU', 'DRAGON', 'F-ZB', 'GEND', 'SECURITE CIVILE', 'RESCUE', 'LIFELIGHT'];
+  return heliCodes.some(c => model.includes(c)) || heliCallsigns.some(cs => callsign.includes(cs));
+}
+
+function isMilitaryFlight(f) {
+  const model = ((f.aircraftModel || '') + ' ' + (f.t || '') + ' ' + (f.desc || '')).toUpperCase();
+  const callsign = ((f.flightNumber || '') + ' ' + (f.callsign || '')).toUpperCase();
+  const milCodes = ['RFAL', 'RAFALE', 'M2000', 'EUFI', 'TYPHOON', 'F16', 'F18', 'F35', 'A400', 'C130', 'C30J', 'KC30', 'E3TF', 'C135', 'MRTT', 'A332MRTT', 'TORN', 'GR4', 'HAWK', 'ALPHA'];
+  const milCallsigns = ['CTM', 'FAF', 'FNY', 'BAF', 'GAF', 'AME', 'IAM', 'RFR', 'RRR', 'NATO', 'FORTE', 'HOMER'];
+  return milCodes.some(c => model.includes(c)) || milCallsigns.some(cs => callsign.includes(cs));
+}
+
+function isVipFlight(f) {
+  const callsign = ((f.flightNumber || '') + ' ' + (f.callsign || '')).toUpperCase();
+  const vipKeywords = ['COTAM', 'CTM0001', 'AFO', 'AIR FORCE ONE', 'EXEC', 'VIP', 'REPUBLIQUE', 'GOVERNMENT', 'STATE'];
+  return vipKeywords.some(kw => callsign.includes(kw)) || (f.category === 'PRIVATE' && (callsign.startsWith('CTM') || callsign.includes('VIP')));
+}
+
+
 
 // ============================================================
 // 1. AIRLINE DATABASE (ICAO callsign prefix → airline info)

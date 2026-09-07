@@ -1,14 +1,16 @@
 /* ==========================================================================
    FLYRADAR — MAP CONTROLLER MODULE
    ========================================================================== */
-import { AIRPORTS } from './simulation.js';
+import { AIRPORTS, checkFlightFilterMatch } from './simulation.js';
 
 export class MapController {
   constructor(onFlightSelectedCallback) {
     this.map = null;
     this.markers = new Map(); // flightId -> Leaflet Marker
     this.trailPolyline = null;
+    this.rainRadarLayer = null;
     this.onFlightSelected = onFlightSelectedCallback;
+
     
     // SVG Path for aircraft
     this.planeSvgPath = 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16z';
@@ -98,6 +100,38 @@ export class MapController {
     }
   }
 
+  async toggleRainRadar(forceState) {
+    if (this.rainRadarLayer && (forceState === false || (forceState === undefined && this.map.hasLayer(this.rainRadarLayer)))) {
+      this.map.removeLayer(this.rainRadarLayer);
+      return false;
+    }
+
+    try {
+      const res = await fetch('https://api.rainviewer.com/public/weather-maps.json', { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const host = data.host || 'https://tilecache.rainviewer.com';
+      const pastList = data.radar?.past || [];
+      if (!pastList.length) return false;
+      const latestPath = pastList[pastList.length - 1].path;
+
+      if (this.rainRadarLayer && this.map.hasLayer(this.rainRadarLayer)) {
+        this.map.removeLayer(this.rainRadarLayer);
+      }
+
+      this.rainRadarLayer = L.tileLayer(`${host}${latestPath}/256/{z}/{x}/{y}/2/1_1.png`, {
+        opacity: 0.65,
+        zIndex: 400,
+        attribution: 'RainViewer'
+      }).addTo(this.map);
+      return true;
+    } catch (err) {
+      console.warn('[RainViewer] Failed to load weather radar tile layer:', err.message);
+      return false;
+    }
+  }
+
+
   getAltitudeColor(altFt) {
     if (altFt <= 0) return '#7f8c8d'; // Ground / unknown
     if (altFt < 1000) return '#ff0000';  // Red
@@ -154,11 +188,9 @@ export class MapController {
     const activeIds = new Set();
 
     flights.forEach(f => {
-      // Check category filters
-      const matchesFilter = filterCategory === 'all' || 
-                            (filterCategory === 'civil' && f.category === 'CIVIL') ||
-                            (filterCategory === 'military' && f.category === 'MILITARY') ||
-                            (filterCategory === 'private' && f.category === 'PRIVATE');
+      // Check category filters (including advanced tactical filters: heavy, heli, vip, military, civil, private)
+      const matchesFilter = checkFlightFilterMatch(f, filterCategory);
+
 
       if (!matchesFilter) {
         // If marker exists but category filtered out, remove it

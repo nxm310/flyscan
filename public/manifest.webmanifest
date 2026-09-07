@@ -1,0 +1,38 @@
+{
+  "name": "FlyRadar — Radar Aéronautique & Suivi de Vols",
+  "short_name": "FlyRadar",
+  "description": "Suivi de vol en direct, radar ADS-B temps réel, alertes squawk d'urgence, radar météo et mode réalité augmentée.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070a13",
+  "theme_color": "#070a13",
+  "orientation": "any",
+  "categories": ["navigation", "weather", "utilities"],
+  "icons": [
+    {
+      "src": "./public/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./public/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./public/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./public/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

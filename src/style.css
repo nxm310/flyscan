@@ -2412,15 +2412,26 @@ html, body {
   .filter-controls {
     width: 100%;
     order: 4;
-    justify-content: space-between;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 3px;
+  }
+
+  .filter-controls::-webkit-scrollbar {
+    display: none;
   }
   
   .filter-btn {
-    padding: 6px 12px;
+    padding: 6px 11px;
     font-size: 0.72rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
+
 
   .action-buttons {
     width: auto;
@@ -2643,5 +2654,127 @@ body.light-mode .airport-tooltip {
     gap: 8px;
   }
 }
+
+/* ==========================================================================
+   FEATURE A: REAL AIRCRAFT PHOTO CARD (Planespotters.net)
+   ========================================================================== */
+.aircraft-photo-card {
+  position: relative;
+  width: 100%;
+  margin: 10px 0 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(10, 17, 34, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  transition: all 0.3s ease;
+}
+
+.aircraft-photo-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  background: #070a13;
+}
+
+.photo-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 30px 15px;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  background: rgba(7, 10, 19, 0.6);
+}
+
+.photo-loading-spinner i {
+  width: 16px;
+  height: 16px;
+  animation: pulse 1.2s infinite;
+}
+
+.photo-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(7, 10, 19, 0.9);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.68rem;
+}
+
+.photo-real-tag {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.5px;
+}
+
+.photo-real-tag i {
+  width: 13px;
+  height: 13px;
+}
+
+.photo-photographer a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.photo-photographer a:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   FEATURE B: WEATHER RADAR (RainViewer Live Precipitation)
+   ========================================================================== */
+#weather-radar-btn.active {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.35), rgba(0, 242, 254, 0.25));
+  border-color: #4facfe;
+  color: #4facfe;
+  box-shadow: 0 0 14px rgba(79, 172, 254, 0.4);
+}
+
+#weather-radar-btn.loading i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   FEATURE E: 3D RADAR GLOBE TOGGLE
+   ========================================================================== */
+.toggle-3d-btn.active {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.3), rgba(79, 172, 254, 0.25));
+  border-color: #00f2fe;
+  color: #00f2fe;
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.4);
+}
+
+#radar-3d-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background: var(--color-bg-space);
+}
+
+#radar-3d-container.hidden {
+  display: none !important;
+}
+
 
 

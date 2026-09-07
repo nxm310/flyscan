@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import * as THREE from 'three';
-import { getDistance } from './simulation.js';
+import { getDistance, checkFlightFilterMatch } from './simulation.js';
 
 export class Radar3DController {
   constructor(onFlightSelectedCallback) {
@@ -11,7 +11,9 @@ export class Radar3DController {
     this.renderer = null;
     this.scene = null;
     this.camera = null;
+    this.isActive = false;
     this.onFlightSelected = onFlightSelectedCallback;
+
 
     // Viewport control angles
     this.theta = -Math.PI / 4; // Horizontal rotation
@@ -91,7 +93,24 @@ export class Radar3DController {
     this.animate();
   }
 
+  setActive(active) {
+    this.isActive = !!active;
+    if (this.container) {
+      if (this.isActive) {
+        this.container.classList.remove('hidden');
+        if (this.renderer && this.container.clientWidth && this.container.clientHeight) {
+          this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        }
+      } else {
+        this.container.classList.add('hidden');
+      }
+    }
+  }
+
   updateCameraPosition() {
+
     // Spherical to Cartesian coordinates mapping relative to cameraTarget
     this.camera.position.x = this.cameraTarget.x + this.distance * Math.sin(this.phi) * Math.sin(this.theta);
     this.camera.position.y = this.cameraTarget.y + this.distance * Math.cos(this.phi);
@@ -307,20 +326,14 @@ export class Radar3DController {
     this.selectedFlightId = selectedFlightId;
     this.filterCategory = filterCategory;
 
-    const activeIds = new Set();
-    const isCivilFilter = filterCategory === 'all' || filterCategory === 'civil';
-    const isMilFilter = filterCategory === 'all' || filterCategory === 'military';
-    const isPrvFilter = filterCategory === 'all' || filterCategory === 'private';
-
     flights.forEach(f => {
-      const matchesFilter = (f.category === 'CIVIL' && isCivilFilter) ||
-                            (f.category === 'MILITARY' && isMilFilter) ||
-                            (f.category === 'PRIVATE' && isPrvFilter);
+      const matchesFilter = checkFlightFilterMatch(f, filterCategory);
 
       if (!matchesFilter) {
         this.removeAircraftGroup(f.id);
         return;
       }
+
 
       activeIds.add(f.id);
       
@@ -637,8 +650,10 @@ export class Radar3DController {
 
   animate() {
     requestAnimationFrame(() => this.animate());
+    if (!this.isActive) return;
     
     // Update sweeping radar line rotating around central baseplate
+
     if (this.sweepBeam) {
       this.sweepBeam.rotation.y += 0.015;
     }

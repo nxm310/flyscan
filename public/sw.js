@@ -2,15 +2,15 @@
    FLYRADAR — SERVICE WORKER (PWA & OFFLINE CACHING)
    ========================================================================== */
 
-const CACHE_NAME = 'flyradar-cache-v1';
+const CACHE_NAME = 'flyradar-cache-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './public/icon.svg',
-  './public/apple-touch-icon.png',
-  './public/icon-192.png',
-  './public/icon-512.png',
-  './public/manifest.webmanifest'
+  './icon.svg',
+  './apple-touch-icon.png',
+  './icon-192.png',
+  './icon-512.png',
+  './manifest.webmanifest'
 ];
 
 // Install: Cache essential app shell
@@ -37,23 +37,22 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Always fetch real-time APIs fresh over network
+  // Always bypass cache for real-time live APIs and proxies
   if (
+    url.pathname.includes('/api/') ||
+    url.pathname.includes('/api-fr24') ||
+    url.pathname.includes('/api-adsb') ||
+    url.hostname.includes('flightradar24.com') ||
+    url.hostname.includes('adsb.lol') ||
     url.hostname.includes('airplanes.live') ||
     url.hostname.includes('adsb.fi') ||
     url.hostname.includes('opensky-network') ||
     url.hostname.includes('rainviewer.com') ||
     url.hostname.includes('planespotters.net') ||
-    url.hostname.includes('open-meteo.com')
+    url.hostname.includes('open-meteo.com') ||
+    url.hostname.includes('wikimedia.org')
   ) {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ error: 'offline', offline: true }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
-    return;
+    return; // Let browser perform direct network fetch
   }
 
   // App shell and static assets: cache-first with network fallback

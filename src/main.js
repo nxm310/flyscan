@@ -37,7 +37,7 @@ window.addEventListener('load', () => {
 
   // Register Progressive Web App Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./public/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('[FlyRadar PWA] Service Worker actif:', reg.scope))
       .catch(err => console.warn('[FlyRadar PWA] Échec Service Worker:', err));
   }

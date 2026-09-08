@@ -662,8 +662,20 @@ export class AirspaceSimulator {
     const e = bounds.east.toFixed(4);
     const boundsParam = n + "," + s + "," + w + "," + e;
 
+function createTimeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => {
+    try { controller.abort(); } catch (_) {}
+  }, ms);
+  return controller.signal;
+}
+
     const candidateUrls = [
       "/api/live-flights?bounds=" + boundsParam,
+      "./api/live-flights?bounds=" + boundsParam,
       "/api-fr24/zones/fcgi/feed.js?bounds=" + boundsParam + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=0&stats=0",
       "https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=" + boundsParam + "&faa=1&satellite=1&mlat=1&flarm=1&adsb=1&gnd=0&air=1&vehicles=0&estimated=1&maxage=14400&gliders=0&stats=0"
     ];
@@ -671,7 +683,7 @@ export class AirspaceSimulator {
     for (const url of candidateUrls) {
       try {
         const res = await fetch(url, {
-          signal: AbortSignal.timeout(5000),
+          signal: createTimeoutSignal(5000),
           headers: { "Accept": "application/json" }
         });
         if (!res.ok) continue;
@@ -732,13 +744,14 @@ export class AirspaceSimulator {
   async _fetchRealAdsb(lat, lng, distNm = 150) {
     const candidateUrls = [
       "/api/live-flights?lat=" + lat.toFixed(4) + "&lng=" + lng.toFixed(4) + "&dist=" + distNm,
+      "./api/live-flights?lat=" + lat.toFixed(4) + "&lng=" + lng.toFixed(4) + "&dist=" + distNm,
       "/api-adsb/v2/lat=" + lat.toFixed(4) + "/lon/" + lng.toFixed(4) + "/dist/" + distNm,
       "https://api.adsb.lol/v2/lat/" + lat.toFixed(4) + "/lon/" + lng.toFixed(4) + "/dist/" + distNm
     ];
 
     for (const url of candidateUrls) {
       try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(url, { signal: createTimeoutSignal(5000) });
         if (!res.ok) continue;
         const json = await res.json();
         const data = json.data || json;

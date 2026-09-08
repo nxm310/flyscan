@@ -5,6 +5,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -158,10 +159,24 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+function getLocalIpAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+  const localIp = getLocalIpAddress();
   console.log(`\n========================================================`);
   console.log(`✈️  FLYRADAR — 100% DONNÉES PHYSIQUES RÉELLES (LIVE ADS-B)`);
-  console.log(`📡  Serveur relais actif sur : http://localhost:${PORT}`);
+  console.log(`📡  Mac local       : http://localhost:${PORT}`);
+  console.log(`📱  iPhone (Wi-Fi)  : http://${localIp}:${PORT}`);
   console.log(`🌐  Flux direct connecté à Flightradar24 & ADS-B`);
   console.log(`========================================================\n`);
 });
